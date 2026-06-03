@@ -712,45 +712,77 @@ function mostrarErrorAcceso(){
 }
 
 function mostrarDashboard(d){
-  const pagos = (d.pagos||[]).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha))
-  const conv  = (d.convenios||[]).find(c=>c.estado==='activo')
-  const totalPagado = pagos.reduce((s,p)=>s+Number(p.monto||0),0)
-  const porcentaje  = d.deuda_original>0 ? Math.round((totalPagado/d.deuda_original)*100) : 0
-  const pagosHTML = pagos.slice(0,5).map(p=>`
-    <div class="pago-row">
-      <span class="fecha">${fmtF(p.fecha)}</span>
-      <span>${p.referencia||p.forma_pago||'—'}</span>
-      <span class="monto">${fmt(p.monto)}</span>
-    </div>`).join('')||'<p style="color:rgba(255,255,255,0.5);font-size:0.8rem;text-align:center;padding:0.5rem;">Sin pagos registrados</p>'
+  const saldo = Number(d.deuda_actual||0)
 
-  const convHTML = conv ? `
-    <div class="conv-mini">
-      <h6>📋 Convenio de Pago</h6>
-      <p>${fmt(conv.monto_mensual)} mensuales — Día ${conv.dia_pago} de cada mes</p>
-      <p style="margin-top:0.3rem;font-size:0.75rem;opacity:0.75;">Vigencia: ${fmtF(conv.fecha_inicio)} al ${fmtF(conv.fecha_fin)} · ${conv.pagos_completados}/${conv.total_pagos} pagos</p>
-      <div class="progress-bar" style="height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin-top:0.6rem;"><div style="height:100%;background:var(--cafe-dorado);border-radius:2px;width:${Math.round(conv.pagos_completados/conv.total_pagos*100)}%"></div></div>
-    </div>` : ''
+  // ── Opciones de liquidación ──────────────────
+  const opciones = [
+    { label:'Opción 1', enganche: 0.20, semanas: 52, color:'#C89A5A', icon:'⭐' },
+    { label:'Opción 2', enganche: 0.15, semanas: 40, color:'#2C5AA0', icon:'🔵' },
+    { label:'Opción 3', enganche: 0.10, semanas: 36, color:'#38A169', icon:'🟢' },
+  ]
+  const opcionesHTML = opciones.map(o=>{
+    const eng   = saldo * o.enganche
+    const resto = saldo - eng
+    const semanal = semanas => resto / semanas
+    return `
+    <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:1rem;margin-bottom:0.8rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;">
+        <span style="font-weight:700;font-size:0.95rem;">${o.icon} ${o.label}</span>
+        <span style="background:${o.color};color:white;padding:0.15rem 0.7rem;border-radius:20px;font-size:0.72rem;font-weight:700;">${Math.round(o.enganche*100)}% hoy + ${o.semanas} semanas</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center;">
+        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:0.6rem;">
+          <div style="font-size:0.68rem;opacity:0.7;margin-bottom:0.2rem;">Pago hoy</div>
+          <div style="font-weight:700;color:${o.color};font-size:0.95rem;">${fmt(eng)}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:0.6rem;">
+          <div style="font-size:0.68rem;opacity:0.7;margin-bottom:0.2rem;">Pago semanal</div>
+          <div style="font-weight:700;color:white;font-size:0.95rem;">${fmt(semanal(o.semanas))}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:0.6rem;">
+          <div style="font-size:0.68rem;opacity:0.7;margin-bottom:0.2rem;">Plazo</div>
+          <div style="font-weight:700;color:white;font-size:0.95rem;">${o.semanas} sem.</div>
+        </div>
+      </div>
+    </div>`
+  }).join('')
 
   document.getElementById('stepDashboard').innerHTML = `
     <div class="deudor-dashboard">
+
+      <!-- Encabezado cliente -->
       <div class="deudor-header">
-        <div class="exp-badge">Expediente ${d.expediente}</div>
+        <div class="exp-badge">Cliente ${d.expediente}</div>
         <h5>${d.nombre}</h5>
-        <div class="sub">${d.concepto||''} · <span style="text-transform:capitalize;">${d.estado}</span></div>
+        <div class="sub" style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.5rem;">
+          <span>🏦 Producto: <strong>${d.producto||d.concepto||'—'}</strong></span>
+          <span>👤 Gestor: <strong>${d.gestor||'Lic. Rubén Bravo'}</strong></span>
+          <span>📅 Último pago: <strong>${fmtF(d.fecha_ultimo_pago)||'Sin registro'}</strong></span>
+        </div>
       </div>
-      <div class="deu-stats">
-        <div class="deu-stat"><span class="val val-red">${fmt(d.deuda_actual)}</span><div class="lbl">Saldo Pendiente</div></div>
-        <div class="deu-stat"><span class="val val-green">${fmt(totalPagado)}</span><div class="lbl">Total Pagado</div></div>
-        <div class="deu-stat"><span class="val val-gold">${fmt(d.deuda_original)}</span><div class="lbl">Deuda Original</div></div>
-        <div class="deu-stat"><span class="val" style="color:white;">${porcentaje}%</span><div class="lbl">Recuperado</div></div>
+
+      <!-- Saldo total -->
+      <div style="text-align:center;padding:1.2rem 0 0.5rem;">
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Tu saldo total</div>
+        <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:#FC8181;">${fmt(saldo)}</div>
       </div>
-      ${convHTML}
-      <div style="margin-bottom:0.6rem;font-size:0.75rem;color:rgba(255,255,255,0.6);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Últimos Pagos</div>
-      <div class="pagos-mini">${pagosHTML}</div>
-      <div class="gestor-box">
-        <div class="icon">👤</div>
-        <div class="info"><strong>${d.gestor||'Lic. Rubén Bravo'}</strong>Gestor asignado · <a href="https://wa.me/5215597675856" target="_blank" style="color:var(--cafe-dorado);">Enviar WhatsApp</a></div>
+
+      <!-- Opciones de liquidación -->
+      <div style="margin:1rem 0 0.5rem;">
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.8rem;text-align:center;">💡 Opciones para liquidar tu cuenta</div>
+        ${opcionesHTML}
       </div>
+
+      <!-- Contacto gestor -->
+      <div class="gestor-box" style="margin-top:0.5rem;">
+        <div class="icon">💬</div>
+        <div class="info">
+          <strong>${d.gestor||'Lic. Rubén Bravo'}</strong>
+          ¿Te interesa alguna opción? Contáctanos ·
+          <a href="https://wa.me/5215597675856?text=Hola,%20soy%20${encodeURIComponent(d.nombre)},%20cliente%20${encodeURIComponent(d.expediente)},%20me%20interesa%20liquidar%20mi%20cuenta" target="_blank" style="color:var(--cafe-dorado);font-weight:700;">WhatsApp →</a>
+        </div>
+      </div>
+
       <button class="btn-cerrar" onclick="reiniciarPortal()">🔒 Cerrar sesión</button>
     </div>`
   document.getElementById('stepDashboard').style.display='block'
@@ -769,7 +801,7 @@ function reiniciarPortal(){
   document.getElementById('dot2').className='step-dot'; document.getElementById('dot2').textContent='2'
   document.getElementById('btnSolicitarPin').disabled=false
   document.getElementById('helpLink').style.display='block'
-  ;['inp-nombre','inp-rfc','inp-exp','inp-fecha'].forEach(id=>document.getElementById(id).value='')
+  ;['inp-nombre','inp-exp','inp-diapago'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' })
   ;[0,1,2,3,4,5].forEach(i=>{const d=document.getElementById('p'+i);d.value='';d.disabled=false;d.style.opacity='1'})
   document.getElementById('errPin').style.display='none'; document.getElementById('lockPin').style.display='none'
   generarCaptcha()
