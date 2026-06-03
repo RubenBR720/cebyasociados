@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Bravo & Asociados</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --azul:#1B3A6B; --azul-c:#2C5AA0; --cafe:#6B4423; --cafe-d:#C89A5A;
+      --crema:#F5F0E8; --bg:#F0F2F5; --white:#FFFFFF; --text:#2D3748;
+      --muted:#718096; --border:#E2E8F0; --success:#38A169; --danger:#E53E3E;
+      --warn:#D69E2E; --info:#3182CE;
+      --shadow:0 4px 20px rgba(0,0,0,0.08); --shadow-lg:0 8px 40px rgba(0,0,0,0.14);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+    a{text-decoration:none;}
+
+    /* Login */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--azul) 0%,var(--azul-c) 100%);}
+    .login-box{background:var(--white);border-radius:20px;padding:3rem 2.5rem;width:100%;max-width:400px;box-shadow:var(--shadow-lg);text-align:center;}
+    .login-logo{width:60px;height:60px;background:linear-gradient(135deg,var(--cafe-d),var(--cafe));border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.8rem;color:white;font-weight:700;margin:0 auto 1rem;}
+    .login-box h2{font-family:'Playfair Display',serif;color:var(--azul);font-size:1.5rem;margin-bottom:0.3rem;}
+    .login-box p{color:var(--muted);font-size:0.85rem;margin-bottom:2rem;}
+    .lf-group{text-align:left;margin-bottom:1.1rem;}
+    .lf-group label{font-size:0.82rem;font-weight:600;color:var(--text);display:block;margin-bottom:0.4rem;}
+    .lf-group input{width:100%;padding:0.75rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none;transition:border 0.2s;}
+    .lf-group input:focus{border-color:var(--azul-c);}
+    .btn-login-admin{width:100%;padding:0.85rem;background:linear-gradient(135deg,var(--azul),var(--azul-c));color:white;border:none;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;font-family:inherit;transition:all 0.3s;}
+    .btn-login-admin:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(27,58,107,0.35);}
+    .login-err{color:var(--danger);font-size:0.82rem;margin-top:0.7rem;display:none;}
+
+    /* Layout */
+    .app{display:none;min-height:100vh;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--azul);display:flex;flex-direction:column;z-index:100;}
+    .sb-logo{padding:1.5rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+    .sb-logo .brand{font-family:'Playfair Display',serif;color:white;font-size:1rem;font-weight:700;display:block;}
+    .sb-logo .sub{font-size:0.68rem;color:var(--cafe-d);letter-spacing:0.08em;text-transform:uppercase;}
+    .sb-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+    .sb-nav a{display:flex;align-items:center;gap:10px;padding:0.75rem 1.2rem;color:rgba(255,255,255,0.7);font-size:0.88rem;font-weight:500;transition:all 0.2s;cursor:pointer;}
+    .sb-nav a:hover,.sb-nav a.active{color:white;background:rgba(255,255,255,0.12);}
+    .sb-nav a.active{border-left:3px solid var(--cafe-d);}
+    .sb-nav .icon{font-size:1.1rem;width:20px;text-align:center;}
+    .sb-sep{padding:0.5rem 1.2rem;font-size:0.68rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.1em;margin-top:0.5rem;}
+    .sb-footer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+    .sb-user{display:flex;align-items:center;gap:8px;}
+    .sb-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--cafe-d),var(--cafe));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;flex-shrink:0;}
+    .sb-user-info .name{color:white;font-size:0.82rem;font-weight:600;}
+    .sb-user-info .role{color:rgba(255,255,255,0.5);font-size:0.72rem;}
+    .btn-logout{margin-top:0.8rem;width:100%;padding:0.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:rgba(255,255,255,0.7);font-size:0.8rem;cursor:pointer;font-family:inherit;transition:0.2s;}
+    .btn-logout:hover{background:rgba(255,255,255,0.15);color:white;}
+
+    .main{margin-left:240px;padding:2rem;min-height:100vh;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+    .topbar h1{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--azul);}
+    .topbar p{font-size:0.85rem;color:var(--muted);}
+
+    /* Cards */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:2rem;}
+    .stat-card{background:var(--white);border-radius:14px;padding:1.4rem;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+    .stat-card.blue::before{background:linear-gradient(90deg,var(--azul),var(--azul-c));}
+    .stat-card.gold::before{background:linear-gradient(90deg,var(--cafe-d),var(--cafe));}
+    .stat-card.green::before{background:linear-gradient(90deg,#38A169,#68D391);}
+    .stat-card.red::before{background:linear-gradient(90deg,#E53E3E,#FC8181);}
+    .stat-icon{font-size:1.8rem;margin-bottom:0.7rem;}
+    .stat-val{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--azul);}
+    .stat-label{font-size:0.78rem;color:var(--muted);font-weight:500;letter-spacing:0.03em;}
+
+    /* Table */
+    .card{background:var(--white);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:1.5rem;}
+    .card-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem;}
+    .card-header h3{font-weight:700;font-size:1rem;color:var(--azul);}
+    .card-body{padding:0;}
+    .search-bar{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;}
+    .search-input{padding:0.5rem 0.9rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;outline:none;width:220px;transition:border 0.2s;}
+    .search-input:focus{border-color:var(--azul-c);}
+    select.filter-sel{padding:0.5rem 0.9rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;outline:none;background:white;cursor:pointer;}
+    table{width:100%;border-collapse:collapse;}
+    th{padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;background:var(--bg);border-bottom:1px solid var(--border);}
+    td{padding:0.85rem 1rem;font-size:0.87rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(27,58,107,0.03);}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:0.2rem 0.7rem;border-radius:50px;font-size:0.73rem;font-weight:700;letter-spacing:0.04em;}
+    .badge-activo{background:rgba(56,161,105,0.12);color:#276749;}
+    .badge-negociacion{background:rgba(214,158,46,0.15);color:#975A16;}
+    .badge-juridico{background:rgba(229,62,62,0.12);color:#C53030;}
+    .badge-pagado{background:rgba(49,130,206,0.12);color:#2B6CB0;}
+    .badge-port{background:rgba(107,68,35,0.12);color:#6B4423;}
+
+    /* Buttons */
+    .btn{padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;}
+    .btn-primary{background:linear-gradient(135deg,var(--azul),var(--azul-c));color:white;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(27,58,107,0.35);}
+    .btn-gold{background:linear-gradient(135deg,var(--cafe-d),var(--cafe));color:white;}
+    .btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(200,154,90,0.35);}
+    .btn-sm{padding:0.3rem 0.7rem;font-size:0.78rem;border-radius:6px;}
+    .btn-ghost{background:transparent;color:var(--azul-c);border:1.5px solid var(--azul-c);}
+    .btn-ghost:hover{background:var(--azul);color:white;border-color:var(--azul);}
+    .btn-danger{background:transparent;color:var(--danger);border:1.5px solid var(--danger);}
+    .btn-danger:hover{background:var(--danger);color:white;}
+    .btn-success{background:linear-gradient(135deg,#38A169,#276749);color:white;}
+    .btn-import{background:linear-gradient(135deg,#2D6A4F,#40916C);color:white;}
+    .btn-import:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,106,79,0.35);}
+
+    /* Modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;padding:1rem;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:white;border-radius:18px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+    .modal-header{padding:1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1;}
+    .modal-header h3{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--azul);}
+    .modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1;padding:0.2rem 0.4rem;border-radius:4px;}
+    .modal-close:hover{background:var(--bg);}
+    .modal-body{padding:1.5rem;}
+    .modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:0.8rem;background:var(--bg);}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+    .fg{margin-bottom:0;}
+    .fg label{font-size:0.8rem;font-weight:600;color:var(--text);display:block;margin-bottom:0.35rem;}
+    .fg input,.fg select,.fg textarea{width:100%;padding:0.65rem 0.9rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:inherit;outline:none;transition:border 0.2s;color:var(--text);}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--azul-c);}
+    .fg textarea{resize:vertical;min-height:80px;}
+    .fg select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231B3A6B' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0.9rem center;}
+    .section-title-form{grid-column:1/-1;font-size:0.75rem;font-weight:700;color:var(--cafe-d);text-transform:uppercase;letter-spacing:0.1em;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+
+    /* Detalle deudor */
+    .detail-header{background:linear-gradient(135deg,var(--azul),var(--azul-c));border-radius:14px;padding:1.5rem;color:white;margin-bottom:1.5rem;}
+    .detail-exp{font-size:0.75rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.08em;}
+    .detail-name{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;margin:0.3rem 0;}
+    .detail-meta{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:0.5rem;}
+    .detail-meta span{font-size:0.82rem;color:rgba(255,255,255,0.8);}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+    .detail-stat{background:var(--white);border-radius:12px;padding:1.2rem;box-shadow:var(--shadow);text-align:center;}
+    .detail-stat .val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;}
+    .detail-stat .lbl{font-size:0.74rem;color:var(--muted);margin-top:0.2rem;}
+    .val-blue{color:var(--azul);} .val-green{color:var(--success);} .val-red{color:var(--danger);} .val-gold{color:var(--cafe);}
+
+    /* Convenio */
+    .convenio-box{background:linear-gradient(135deg,var(--cafe-d),var(--cafe));border-radius:12px;padding:1.2rem;color:white;margin-bottom:1.5rem;}
+    .convenio-box h4{font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.8;margin-bottom:0.8rem;}
+    .convenio-info{display:flex;gap:2rem;flex-wrap:wrap;}
+    .convenio-item .lbl{font-size:0.72rem;opacity:0.75;}
+    .convenio-item .val{font-weight:700;font-size:1rem;}
+    .progress-bar{height:6px;background:rgba(255,255,255,0.25);border-radius:3px;margin-top:0.8rem;}
+    .progress-fill{height:100%;background:white;border-radius:3px;transition:width 0.5s;}
+
+    .pagos-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+    .pagos-header h4{font-weight:700;color:var(--azul);}
+    .empty-state{text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem;}
+
+    /* Toast */
+    .toast{position:fixed;bottom:24px;right:24px;padding:0.8rem 1.4rem;border-radius:10px;color:white;font-size:0.88rem;font-weight:600;z-index:9999;box-shadow:var(--shadow-lg);transform:translateY(100px);opacity:0;transition:all 0.4s;pointer-events:none;}
+    .toast.show{transform:translateY(0);opacity:1;}
+    .toast.success{background:var(--success);}
+    .toast.error{background:var(--danger);}
+
+    /* Loading */
+    .loading{display:flex;align-items:center;justify-content:center;padding:3rem;color:var(--muted);gap:10px;}
+    .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--azul-c);border-radius:50%;animation:spin 0.8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Portafolios grid */
+    .port-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;padding:1.5rem;}
+    .port-card{border:1.5px solid var(--border);border-radius:12px;padding:1.3rem;background:var(--white);cursor:pointer;transition:all 0.2s;position:relative;}
+    .port-card:hover{border-color:var(--azul-c);box-shadow:var(--shadow);}
+    .port-card.selected{border-color:var(--azul);box-shadow:0 0 0 2px rgba(27,58,107,0.2);}
+    .port-clave{font-size:0.72rem;font-weight:700;color:var(--cafe-d);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;}
+    .port-nombre{font-weight:700;color:var(--azul);font-size:1rem;margin-bottom:0.3rem;}
+    .port-cedente{font-size:0.82rem;color:var(--muted);}
+    .port-stats{display:flex;gap:1.2rem;margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);}
+    .port-stat .n{font-weight:700;font-size:1.1rem;color:var(--azul);}
+    .port-stat .l{font-size:0.72rem;color:var(--muted);}
+
+    /* Import zone */
+    .drop-zone{border:2.5px dashed var(--border);border-radius:16px;padding:3rem 2rem;text-align:center;transition:all 0.3s;cursor:pointer;background:var(--bg);}
+    .drop-zone:hover,.drop-zone.drag-over{border-color:var(--azul-c);background:rgba(44,90,160,0.04);}
+    .drop-icon{font-size:3rem;margin-bottom:1rem;}
+    .drop-title{font-size:1.1rem;font-weight:700;color:var(--azul);margin-bottom:0.4rem;}
+    .drop-sub{font-size:0.85rem;color:var(--muted);}
+    .drop-btn{display:inline-block;margin-top:1.2rem;padding:0.6rem 1.5rem;background:var(--azul);color:white;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;}
+
+    /* Import progress */
+    .import-progress{display:none;padding:1.5rem;}
+    .prog-bar-wrap{height:12px;background:var(--border);border-radius:6px;overflow:hidden;margin:1rem 0;}
+    .prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--azul-c),var(--cafe-d));border-radius:6px;transition:width 0.3s;}
+    .prog-stats{display:flex;gap:2rem;font-size:0.85rem;color:var(--muted);margin-top:0.5rem;}
+    .prog-stats span strong{color:var(--text);}
+    .import-log{background:var(--bg);border-radius:8px;padding:1rem;font-size:0.8rem;font-family:monospace;max-height:200px;overflow-y:auto;margin-top:1rem;color:var(--text);}
+    .log-ok{color:var(--success);}
+    .log-err{color:var(--danger);}
+
+    /* Preview table */
+    .preview-wrap{overflow-x:auto;max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:1rem;}
+    .preview-wrap table{min-width:600px;}
+    .preview-wrap th{background:var(--azul);color:white;font-size:0.72rem;padding:0.5rem 0.8rem;}
+    .preview-wrap td{font-size:0.78rem;padding:0.4rem 0.8rem;}
+
+    @media(max-width:900px){
+      .stats-grid{grid-template-columns:1fr 1fr;}
+      .sidebar{transform:translateX(-100%);transition:transform 0.3s;}
+      .main{margin-left:0;}
+      .form-grid{grid-template-columns:1fr;}
+      .detail-grid{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">B</div>
+    <h2>Panel Administrativo</h2>
+    <p>Cobranza Especializada Bravo & Asociados</p>
+    <div class="lf-group"><label>Usuario</label><input type="text" id="adminUser" placeholder="admin"/></div>
+    <div class="lf-group"><label>Contraseña</label><input type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn-login-admin" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="loginErr">⚠️ Credenciales incorrectas</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <span class="brand">Bravo & Asociados</span>
+      <span class="sub">Panel Administrativo</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sep">Principal</div>
+      <a class="active" id="nav-dashboard"   onclick="showView('dashboard')">  <span class="icon">📊</span> Dashboard</a>
+      <a              id="nav-deudores"      onclick="showView('deudores')">   <span class="icon">👥</span> Deudores</a>
+      <a              id="nav-pagos"         onclick="showView('pagos')">      <span class="icon">💰</span> Pagos</a>
+      <div class="sb-sep">Portafolios</div>
+      <a              id="nav-portafolios"   onclick="showView('portafolios')"><span class="icon">🗂️</span> Mis Portafolios</a>
+      <a              id="nav-importar"      onclick="showView('importar')">   <span class="icon">📥</span> Importar Excel</a>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar">RB</div>
+        <div class="sb-user-info"><div class="name">Rubén Bravo</div><div class="role">Administrador</div></div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main" id="mainContent">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="view-dashboard">
+      <div class="topbar">
+        <div><h1>Dashboard</h1><p id="fechaHoy"></p></div>
+        <button class="btn btn-gold" onclick="showView('deudores');openModalNuevo()">+ Nuevo Deudor</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">👥</div><div class="stat-val" id="s-total">—</div><div class="stat-label">Total Deudores</div></div>
+        <div class="stat-card gold"><div class="stat-icon">💳</div><div class="stat-val" id="s-deuda">—</div><div class="stat-label">Deuda Total Activa</div></div>
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-val" id="s-pagado">—</div><div class="stat-label">Total Recuperado</div></div>
+        <div class="stat-card red"><div class="stat-icon">⚖️</div><div class="stat-val" id="s-juridico">—</div><div class="stat-label">En Proceso Judicial</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Últimos Expedientes</h3></div>
+        <div class="card-body"><div id="dash-table"></div></div>
+      </div>
+    </div>
+
+    <!-- ── DEUDORES ── -->
+    <div id="view-deudores" style="display:none;">
+      <div class="topbar">
+        <div><h1>Deudores</h1><p>Gestión de expedientes</p></div>
+        <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;">
+          <select class="filter-sel" id="filtroPortafolio" onchange="filtrarDeudores()">
+            <option value="">— Todos los portafolios —</option>
+          </select>
+          <select class="filter-sel" id="filtroEstado" onchange="filtrarDeudores()">
+            <option value="">— Todos los estados —</option>
+            <option value="activo">Activo</option>
+            <option value="negociacion">Negociación</option>
+            <option value="juridico">Judicial</option>
+            <option value="pagado">Pagado</option>
+          </select>
+          <input class="search-input" id="searchInput" placeholder="🔍 Buscar nombre, RFC, expediente..." oninput="filtrarDeudores()"/>
+          <button class="btn btn-primary" onclick="openModalNuevo()">+ Nuevo</button>
+        </div>
+      </div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem;" id="deudoresCount"></div>
+      <div class="card">
+        <div class="card-body"><div id="deudores-table"></div></div>
+      </div>
+    </div>
+
+    <!-- ── PAGOS ── -->
+    <div id="view-pagos" style="display:none;">
+      <div class="topbar"><div><h1>Historial de Pagos</h1><p>Todos los abonos registrados</p></div></div>
+      <div class="card">
+        <div class="card-body"><div id="pagos-table"></div></div>
+      </div>
+    </div>
+
+    <!-- ── PORTAFOLIOS ── -->
+    <div id="view-portafolios" style="display:none;">
+      <div class="topbar">
+        <div><h1>Portafolios</h1><p>Carteras de deuda administradas</p></div>
+        <button class="btn btn-primary" onclick="openModalPortafolio()">+ Nuevo Portafolio</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">🗂️</div><div class="stat-val" id="p-total">—</div><div class="stat-label">Portafolios Activos</div></div>
+        <div class="stat-card gold"><div class="stat-icon">👥</div><div class="stat-val" id="p-deudores">—</div><div class="stat-label">Total Deudores</div></div>
+        <div class="stat-card green"><div class="stat-icon">💳</div><div class="stat-val" id="p-deuda">—</div><div class="stat-label">Deuda Total</div></div>
+        <div class="stat-card red"><div class="stat-icon">💰</div><div class="stat-val" id="p-recup">—</div><div class="stat-label">Recuperado</div></div>
+      </div>
+      <div id="portafolios-grid" class="port-grid"></div>
+    </div>
+
+    <!-- ── IMPORTAR ── -->
+    <div id="view-importar" style="display:none;">
+      <div class="topbar">
+        <div><h1>Importar desde Excel</h1><p>Carga masiva de hasta 100,000 deudores</p></div>
+        <a href="#" onclick="descargarPlantilla()" class="btn btn-gold">📥 Descargar Plantilla</a>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><h3>Paso 1 — Selecciona el portafolio destino</h3></div>
+        <div class="card-body" style="padding:1.5rem;">
+          <div class="form-grid" style="max-width:600px;">
+            <div class="fg">
+              <label>Portafolio destino *</label>
+              <select id="imp-portafolio">
+                <option value="">— Selecciona un portafolio —</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Si no existe, créalo primero</label>
+              <button class="btn btn-ghost" onclick="showView('portafolios');openModalPortafolio()" style="width:100%;justify-content:center;">+ Crear Portafolio</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><h3>Paso 2 — Selecciona el archivo Excel</h3></div>
+        <div class="card-body" style="padding:1.5rem;">
+          <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+            <div class="drop-icon">📊</div>
+            <div class="drop-title">Arrastra tu archivo aquí</div>
+            <div class="drop-sub">o haz clic para seleccionarlo</div>
+            <div class="drop-sub" style="margin-top:0.4rem;font-size:0.78rem;">Formatos: .xlsx, .xls — Hasta 100,000 filas</div>
+            <div class="drop-btn">Seleccionar archivo</div>
+          </div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleFile(this.files[0])"/>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="card" id="previewCard" style="display:none;margin-bottom:1.5rem;">
+        <div class="card-header">
+          <h3 id="previewTitle">Vista previa</h3>
+          <div style="display:flex;gap:0.8rem;align-items:center;">
+            <span id="previewCount" style="font-size:0.84rem;color:var(--muted);"></span>
+            <button class="btn btn-import" onclick="iniciarImportacion()">🚀 Iniciar Importación</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="preview-wrap" id="previewTable"></div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="card" id="progressCard" style="display:none;">
+        <div class="card-header"><h3>Progreso de Importación</h3></div>
+        <div class="import-progress" style="display:block;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <span id="progLabel" style="font-weight:600;color:var(--azul);">Procesando...</span>
+            <span id="progPct" style="font-size:1.1rem;font-weight:700;color:var(--azul);">0%</span>
+          </div>
+          <div class="prog-bar-wrap"><div class="prog-bar-fill" id="progBar" style="width:0%"></div></div>
+          <div class="prog-stats">
+            <span>✅ Insertados: <strong id="progOk">0</strong></span>
+            <span>⚠️ Actualizados: <strong id="progUpd">0</strong></span>
+            <span>❌ Errores: <strong id="progErr">0</strong></span>
+            <span>📋 Total: <strong id="progTotal">0</strong></span>
+          </div>
+          <div class="import-log" id="importLog"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Nuevo/Editar Deudor -->
+<div class="modal-overlay" id="modalDeudor">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalDeudorTitle">Nuevo Deudor</h3>
+      <button class="modal-close" onclick="closeModal('modalDeudor')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="section-title-form">Identificación</div>
+        <div class="fg"><label>Portafolio</label>
+          <select id="f-portafolio"><option value="">— Sin portafolio —</option></select>
+        </div>
+        <div class="fg"><label>Expediente *</label><input id="f-expediente" placeholder="EXP-2025-001"/></div>
+        <div class="fg"><label>Estado</label>
+          <select id="f-estado">
+            <option value="activo">Activo</option>
+            <option value="negociacion">En Negociación</option>
+            <option value="juridico">Proceso Judicial</option>
+            <option value="pagado">Pagado / Cerrado</option>
+          </select>
+        </div>
+        <div class="fg"><label>Nombre Completo *</label><input id="f-nombre" placeholder="Juan Pérez García"/></div>
+        <div class="fg"><label>RFC *</label><input id="f-rfc" placeholder="PEGJ850312AB1" style="text-transform:uppercase;"/></div>
+        <div class="fg"><label>Fecha de Nacimiento *</label><input type="date" id="f-fnac"/></div>
+        <div class="fg"><label>Teléfono</label><input id="f-tel" placeholder="55 0000 0000"/></div>
+        <div class="fg"><label>Correo</label><input type="email" id="f-correo" placeholder="email@dominio.com"/></div>
+        <div class="fg"><label>Gestor</label><input id="f-gestor" value="Lic. Rubén Bravo"/></div>
+        <div class="fg" style="grid-column:1/-1"><label>Dirección</label><input id="f-dir" placeholder="Calle, número, colonia, ciudad"/></div>
+        <div class="section-title-form">Deuda</div>
+        <div class="fg"><label>Concepto *</label><input id="f-concepto" placeholder="Ej. Crédito personal"/></div>
+        <div class="fg"><label>Fecha Inicio Adeudo</label><input type="date" id="f-finicio"/></div>
+        <div class="fg"><label>Deuda Original ($) *</label><input type="number" id="f-deuda-orig" placeholder="0.00" min="0" step="0.01"/></div>
+        <div class="fg"><label>Deuda Actual ($) *</label><input type="number" id="f-deuda-act" placeholder="0.00" min="0" step="0.01"/></div>
+        <div class="fg"><label>Interés Mensual (%)</label><input type="number" id="f-interes" placeholder="2.5" min="0" step="0.1"/></div>
+        <div class="fg" style="grid-column:1/-1"><label>Notas</label><textarea id="f-notas" placeholder="Observaciones..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalDeudor')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarDeudor()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detalle Deudor -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <h3>Detalle de Expediente</h3>
+      <button class="modal-close" onclick="closeModal('modalDetalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalleContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalDetalle')">Cerrar</button>
+      <button class="btn btn-success" onclick="openModalPago()">+ Registrar Pago</button>
+      <button class="btn btn-primary" onclick="editarDeudorActual()">✏️ Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Registrar Pago -->
+<div class="modal-overlay" id="modalPago">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>Registrar Pago</h3>
+      <button class="modal-close" onclick="closeModal('modalPago')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>Fecha *</label><input type="date" id="p-fecha"/></div>
+        <div class="fg"><label>Monto ($) *</label><input type="number" id="p-monto" placeholder="0.00" min="0" step="0.01"/></div>
+        <div class="fg"><label>Referencia</label><input id="p-ref" placeholder="TRF-001"/></div>
+        <div class="fg"><label>Forma de Pago</label>
+          <select id="p-forma"><option>Transferencia</option><option>Depósito</option><option>Efectivo</option><option>Cheque</option><option>SPEI</option></select>
+        </div>
+        <div class="fg" style="grid-column:1/-1"><label>Nota</label><textarea id="p-nota" placeholder="Descripción del pago..." style="min-height:60px;"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalPago')">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarPago()">💰 Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Portafolio -->
+<div class="modal-overlay" id="modalPortafolio">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="modalPortTitle">Nuevo Portafolio</h3>
+      <button class="modal-close" onclick="closeModal('modalPortafolio')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>Clave única *</label><input id="port-clave" placeholder="HSBC-2024" style="text-transform:uppercase;"/></div>
+        <div class="fg"><label>Nombre del Portafolio *</label><input id="port-nombre" placeholder="Cartera HSBC Q1 2024"/></div>
+        <div class="fg"><label>Cedente / Banco</label><input id="port-cedente" placeholder="HSBC México"/></div>
+        <div class="fg"><label>Fecha de Adquisición</label><input type="date" id="port-fecha"/></div>
+        <div class="fg"><label>Precio de Adquisición ($)</label><input type="number" id="port-precio" placeholder="0.00" min="0" step="0.01"/></div>
+        <div class="fg"><label>Deuda Total del Portafolio ($)</label><input type="number" id="port-deuda" placeholder="0.00" min="0" step="0.01"/></div>
+        <div class="fg" style="grid-column:1/-1"><label>Descripción</label><textarea id="port-desc" placeholder="Notas sobre este portafolio..." style="min-height:60px;"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalPortafolio')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPortafolio()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONFIGURACIÓN
+// ═══════════════════════════════════════
+const SUPABASE_URL  = 'https://xdzdtynptjifgaicnmcw.supabase.co'
+const SUPABASE_KEY  = 'sb_publishable__ykyEcYZkdg3fnynnJw92g_XVYftA0f'
+const ADMIN_USER    = 'admin'
+const ADMIN_PASS    = 'BravoAdmin2024'
+const BATCH_SIZE    = 500   // registros por lote en importación
+
+const { createClient } = window.supabase
+const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+let allDeudores    = []
+let allPagos       = []
+let allPortafolios = []
+let currentDeudorId     = null
+let currentPortId       = null
+let importData          = []
+let importando          = false
+
+// ═══ AUTH ═══
+function doLogin(){
+  const u = document.getElementById('adminUser').value.trim()
+  const p = document.getElementById('adminPass').value
+  if(u === ADMIN_USER && p === ADMIN_PASS){
+    document.getElementById('loginWrap').style.display = 'none'
+    document.getElementById('app').style.display = 'flex'
+    iniciar()
+  } else {
+    document.getElementById('loginErr').style.display = 'block'
+  }
+}
+function doLogout(){
+  document.getElementById('app').style.display = 'none'
+  document.getElementById('loginWrap').style.display = 'flex'
+  document.getElementById('adminPass').value = ''
+}
+
+// ═══ INIT ═══
+async function iniciar(){
+  const now = new Date()
+  document.getElementById('fechaHoy').textContent = now.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+  await cargarDatos()
+}
+
+async function cargarDatos(){
+  const [rd, rp, rport] = await Promise.all([
+    db.from('deudores').select('*').order('created_at',{ascending:false}),
+    db.from('pagos').select('*').order('fecha',{ascending:false}),
+    db.from('portafolios').select('*').order('created_at',{ascending:false})
+  ])
+  if(rd.error){ showToast('Error al cargar: '+rd.error.message,'error'); return }
+  allDeudores    = rd.data    || []
+  allPagos       = rp.data    || []
+  allPortafolios = rport.data || []
+  renderDashboard()
+  renderDeudoresTable(allDeudores)
+  renderPagosTable()
+  renderPortafolios()
+  poblarSelectsPortafolio()
+}
+
+// ═══ DASHBOARD ═══
+function renderDashboard(){
+  const activos    = allDeudores.filter(d => d.estado !== 'pagado')
+  const juridico   = allDeudores.filter(d => d.estado === 'juridico').length
+  const deudaTotal = activos.reduce((s,d) => s + Number(d.deuda_actual||0), 0)
+  const pagado     = allPagos.reduce((s,p) => s + Number(p.monto||0), 0)
+  document.getElementById('s-total').textContent    = allDeudores.length.toLocaleString('es-MX')
+  document.getElementById('s-deuda').textContent    = fmt(deudaTotal)
+  document.getElementById('s-pagado').textContent   = fmt(pagado)
+  document.getElementById('s-juridico').textContent = juridico
+  const ultimos = allDeudores.slice(0,10)
+  document.getElementById('dash-table').innerHTML = ultimos.length
+    ? tableHTML(ultimos)
+    : '<div class="empty-state">No hay deudores registrados.</div>'
+}
+
+// ═══ DEUDORES ═══
+function renderDeudoresTable(data){
+  const count = data.length
+  document.getElementById('deudoresCount').textContent = `Mostrando ${count.toLocaleString('es-MX')} registro${count!==1?'s':''}`
+  document.getElementById('deudores-table').innerHTML = data.length
+    ? tableHTML(data)
+    : '<div class="empty-state">No se encontraron resultados.</div>'
+}
+
+function tableHTML(data){
+  return `<table>
+    <thead><tr>
+      <th>Cliente</th><th>Nombre</th><th>Teléfono</th>
+      <th>Portafolio</th><th>Saldo Total</th><th>Días Atraso</th><th>Estado</th><th>Acciones</th>
+    </tr></thead>
+    <tbody>${data.map(d=>{
+      const port = allPortafolios.find(p=>p.id===d.portafolio_id)
+      return `<tr>
+        <td><strong style="font-size:0.82rem;">${d.expediente}</strong></td>
+        <td>${d.nombre}</td>
+        <td>${d.telefono||'—'}</td>
+        <td>${port ? `<span class="badge badge-port">${port.clave}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+        <td><strong style="color:var(--danger)">${fmt(d.deuda_actual)}</strong></td>
+        <td style="text-align:center;">${d.dias_atraso||'—'}</td>
+        <td><span class="badge badge-${d.estado}">${labelEstado(d.estado)}</span></td>
+        <td>
+          <button class="btn btn-sm btn-ghost" onclick="verDetalle('${d.id}')">👁</button>
+          <button class="btn btn-sm btn-ghost" onclick="editarDeudor('${d.id}')" style="margin-left:4px;">✏️</button>
+        </td>
+      </tr>`
+    }).join('')}</tbody>
+  </table>`
+}
+
+function filtrarDeudores(){
+  const q     = document.getElementById('searchInput').value.toLowerCase()
+  const port  = document.getElementById('filtroPortafolio').value
+  const estado= document.getElementById('filtroEstado').value
+  const f = allDeudores.filter(d => {
+    const matchQ = !q || d.nombre?.toLowerCase().includes(q) || d.rfc?.toLowerCase().includes(q) || d.expediente?.toLowerCase().includes(q)
+    const matchP = !port || d.portafolio_id === port
+    const matchE = !estado || d.estado === estado
+    return matchQ && matchP && matchE
+  })
+  renderDeudoresTable(f)
+}
+
+// ═══ PAGOS ═══
+function renderPagosTable(){
+  const html = allPagos.length ? `<table>
+    <thead><tr><th>Fecha</th><th>Expediente</th><th>Monto</th><th>Referencia</th><th>Forma</th><th>Nota</th></tr></thead>
+    <tbody>${allPagos.map(p=>{
+      const d = allDeudores.find(x=>x.id===p.deudor_id)
+      return `<tr>
+        <td>${fmtFecha(p.fecha)}</td>
+        <td>${d?.expediente||'—'}</td>
+        <td><strong style="color:var(--success)">${fmt(p.monto)}</strong></td>
+        <td>${p.referencia||'—'}</td>
+        <td>${p.forma_pago||'—'}</td>
+        <td>${p.nota||'—'}</td>
+      </tr>`
+    }).join('')}</tbody>
+  </table>` : '<div class="empty-state">No hay pagos registrados.</div>'
+  document.getElementById('pagos-table').innerHTML = html
+}
+
+// ═══ PORTAFOLIOS ═══
+function renderPortafolios(){
+  const total = allPortafolios.length
+  const totalDeudores = allDeudores.length
+  const totalDeuda = allDeudores.filter(d=>d.estado!=='pagado').reduce((s,d)=>s+Number(d.deuda_actual||0),0)
+  const totalRecup = allPagos.reduce((s,p)=>s+Number(p.monto||0),0)
+  document.getElementById('p-total').textContent   = total
+  document.getElementById('p-deudores').textContent= totalDeudores.toLocaleString('es-MX')
+  document.getElementById('p-deuda').textContent   = fmt(totalDeuda)
+  document.getElementById('p-recup').textContent   = fmt(totalRecup)
+
+  const grid = document.getElementById('portafolios-grid')
+  if(!total){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">No hay portafolios. Crea el primero con el botón "+&nbsp;Nuevo Portafolio".</div>'
+    return
+  }
+  grid.innerHTML = allPortafolios.map(p=>{
+    const deudoresPort = allDeudores.filter(d=>d.portafolio_id===p.id)
+    const deudaPort = deudoresPort.filter(d=>d.estado!=='pagado').reduce((s,d)=>s+Number(d.deuda_actual||0),0)
+    return `<div class="port-card" onclick="filtrarPorPortafolio('${p.id}')">
+      <div class="port-clave">${p.clave}</div>
+      <div class="port-nombre">${p.nombre}</div>
+      <div class="port-cedente">${p.cedente||'—'} ${p.fecha_adq ? '· '+fmtFecha(p.fecha_adq) : ''}</div>
+      <div class="port-stats">
+        <div class="port-stat"><div class="n">${deudoresPort.length.toLocaleString('es-MX')}</div><div class="l">Deudores</div></div>
+        <div class="port-stat"><div class="n">${fmt(deudaPort)}</div><div class="l">Deuda activa</div></div>
+      </div>
+      <button class="btn btn-sm btn-ghost" style="margin-top:0.8rem;width:100%;justify-content:center;" onclick="event.stopPropagation();editarPortafolio('${p.id}')">✏️ Editar</button>
+    </div>`
+  }).join('')
+}
+
+function filtrarPorPortafolio(portId){
+  showView('deudores')
+  document.getElementById('filtroPortafolio').value = portId
+  filtrarDeudores()
+}
+
+function poblarSelectsPortafolio(){
+  const opts = allPortafolios.map(p=>`<option value="${p.id}">${p.clave} — ${p.nombre}</option>`).join('')
+  ;['f-portafolio','imp-portafolio','filtroPortafolio'].forEach(id=>{
+    const el = document.getElementById(id)
+    if(!el) return
+    const firstOpt = el.options[0].outerHTML
+    el.innerHTML = firstOpt + opts
+  })
+}
+
+// ═══ CRUD PORTAFOLIO ═══
+let editPortId = null
+function openModalPortafolio(id=null){
+  editPortId = id
+  document.getElementById('modalPortTitle').textContent = id ? 'Editar Portafolio' : 'Nuevo Portafolio'
+  if(id){
+    const p = allPortafolios.find(x=>x.id===id)
+    document.getElementById('port-clave').value  = p.clave||''
+    document.getElementById('port-nombre').value = p.nombre||''
+    document.getElementById('port-cedente').value= p.cedente||''
+    document.getElementById('port-fecha').value  = p.fecha_adq||''
+    document.getElementById('port-precio').value = p.precio_adq||''
+    document.getElementById('port-deuda').value  = p.total_deuda||''
+    document.getElementById('port-desc').value   = p.descripcion||''
+  } else {
+    ['port-clave','port-nombre','port-cedente','port-fecha','port-precio','port-deuda','port-desc'].forEach(i=>document.getElementById(i).value='')
+  }
+  openModal('modalPortafolio')
+}
+function editarPortafolio(id){ openModalPortafolio(id) }
+async function guardarPortafolio(){
+  const datos = {
+    clave:       document.getElementById('port-clave').value.trim().toUpperCase(),
+    nombre:      document.getElementById('port-nombre').value.trim(),
+    cedente:     document.getElementById('port-cedente').value.trim()||null,
+    fecha_adq:   document.getElementById('port-fecha').value||null,
+    precio_adq:  parseFloat(document.getElementById('port-precio').value)||0,
+    total_deuda: parseFloat(document.getElementById('port-deuda').value)||0,
+    descripcion: document.getElementById('port-desc').value.trim()||null,
+  }
+  if(!datos.clave||!datos.nombre){ showToast('Clave y nombre son obligatorios','error'); return }
+  let r
+  if(editPortId){
+    r = await db.from('portafolios').update(datos).eq('id',editPortId)
+  } else {
+    r = await db.from('portafolios').insert(datos)
+  }
+  if(r.error){ showToast('Error: '+r.error.message,'error'); return }
+  showToast(editPortId?'Portafolio actualizado':'Portafolio creado','success')
+  closeModal('modalPortafolio')
+  await cargarDatos()
+}
+
+// ═══ CRUD DEUDOR ═══
+function openModalNuevo(){
+  currentDeudorId = null
+  document.getElementById('modalDeudorTitle').textContent = 'Nuevo Deudor'
+  limpiarFormDeudor()
+  openModal('modalDeudor')
+}
+function editarDeudor(id){
+  const d = allDeudores.find(x=>x.id===id)
+  if(!d) return
+  currentDeudorId = id
+  document.getElementById('modalDeudorTitle').textContent = 'Editar Deudor'
+  document.getElementById('f-portafolio').value  = d.portafolio_id||''
+  document.getElementById('f-expediente').value  = d.expediente||''
+  document.getElementById('f-nombre').value      = d.nombre||''
+  document.getElementById('f-rfc').value         = d.rfc||''
+  document.getElementById('f-fnac').value        = d.fecha_nacimiento||''
+  document.getElementById('f-tel').value         = d.telefono||''
+  document.getElementById('f-correo').value      = d.correo||''
+  document.getElementById('f-gestor').value      = d.gestor||''
+  document.getElementById('f-dir').value         = d.direccion||''
+  document.getElementById('f-concepto').value    = d.concepto||''
+  document.getElementById('f-finicio').value     = d.fecha_inicio||''
+  document.getElementById('f-deuda-orig').value  = d.deuda_original||''
+  document.getElementById('f-deuda-act').value   = d.deuda_actual||''
+  document.getElementById('f-interes').value     = d.interes_mensual||''
+  document.getElementById('f-notas').value       = d.notas||''
+  document.getElementById('f-estado').value      = d.estado||'activo'
+  openModal('modalDeudor')
+}
+function editarDeudorActual(){ closeModal('modalDetalle'); editarDeudor(currentDeudorId) }
+async function guardarDeudor(){
+  const datos = {
+    portafolio_id:   document.getElementById('f-portafolio').value||null,
+    expediente:      document.getElementById('f-expediente').value.trim(),
+    nombre:          document.getElementById('f-nombre').value.trim(),
+    rfc:             document.getElementById('f-rfc').value.trim().toUpperCase(),
+    fecha_nacimiento:document.getElementById('f-fnac').value,
+    telefono:        document.getElementById('f-tel').value.trim(),
+    correo:          document.getElementById('f-correo').value.trim(),
+    gestor:          document.getElementById('f-gestor').value.trim(),
+    direccion:       document.getElementById('f-dir').value.trim(),
+    concepto:        document.getElementById('f-concepto').value.trim(),
+    fecha_inicio:    document.getElementById('f-finicio').value||null,
+    deuda_original:  parseFloat(document.getElementById('f-deuda-orig').value)||0,
+    deuda_actual:    parseFloat(document.getElementById('f-deuda-act').value)||0,
+    interes_mensual: parseFloat(document.getElementById('f-interes').value)||0,
+    notas:           document.getElementById('f-notas').value.trim(),
+    estado:          document.getElementById('f-estado').value,
+  }
+  if(!datos.expediente||!datos.nombre||!datos.rfc||!datos.fecha_nacimiento){
+    showToast('Completa los campos obligatorios (*)','error'); return
+  }
+  const r = currentDeudorId
+    ? await db.from('deudores').update(datos).eq('id',currentDeudorId)
+    : await db.from('deudores').insert(datos)
+  if(r.error){ showToast('Error: '+r.error.message,'error'); return }
+  showToast(currentDeudorId?'Deudor actualizado':'Deudor registrado','success')
+  closeModal('modalDeudor')
+  await cargarDatos()
+}
+function limpiarFormDeudor(){
+  ['f-expediente','f-nombre','f-rfc','f-fnac','f-tel','f-correo','f-dir','f-concepto','f-finicio','f-deuda-orig','f-deuda-act','f-interes','f-notas'].forEach(id=>{ document.getElementById(id).value = '' })
+  document.getElementById('f-gestor').value      = 'Lic. Rubén Bravo'
+  document.getElementById('f-estado').value      = 'activo'
+  document.getElementById('f-portafolio').value  = ''
+}
+
+// ═══ DETALLE ═══
+async function verDetalle(id){
+  currentDeudorId = id
+  const d = allDeudores.find(x=>x.id===id)
+  if(!d) return
+  const pagosD    = allPagos.filter(p=>p.deudor_id===id)
+  const totalPag  = pagosD.reduce((s,p)=>s+Number(p.monto||0),0)
+  const saldo     = Number(d.deuda_actual||0)
+  const port      = allPortafolios.find(p=>p.id===d.portafolio_id)
+  const {data:conv} = await db.from('convenios').select('*').eq('deudor_id',id).eq('estado','activo').maybeSingle()
+  const convHTML = conv ? `<div class="convenio-box">
+    <h4>📋 Convenio de Pago Vigente</h4>
+    <div class="convenio-info">
+      <div class="convenio-item"><div class="lbl">Monto mensual</div><div class="val">${fmt(conv.monto_mensual)}</div></div>
+      <div class="convenio-item"><div class="lbl">Día de pago</div><div class="val">Día ${conv.dia_pago}</div></div>
+      <div class="convenio-item"><div class="lbl">Vigencia</div><div class="val">${fmtFecha(conv.fecha_inicio)} – ${fmtFecha(conv.fecha_fin)}</div></div>
+      <div class="convenio-item"><div class="lbl">Avance</div><div class="val">${conv.pagos_completados}/${conv.total_pagos}</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(conv.pagos_completados/conv.total_pagos*100)}%"></div></div>
+  </div>` : ''
+  const pagosHTML = pagosD.length ? `<table>
+    <thead><tr><th>Fecha</th><th>Monto</th><th>Referencia</th><th>Forma</th><th>Nota</th></tr></thead>
+    <tbody>${pagosD.map(p=>`<tr>
+      <td>${fmtFecha(p.fecha)}</td>
+      <td><strong style="color:var(--success)">${fmt(p.monto)}</strong></td>
+      <td>${p.referencia||'—'}</td><td>${p.forma_pago||'—'}</td><td>${p.nota||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>` : '<div class="empty-state">Sin pagos registrados.</div>'
+  document.getElementById('detalleContent').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-exp">Expediente ${d.expediente} ${port?`<span style="background:rgba(255,255,255,0.2);padding:0.1rem 0.6rem;border-radius:20px;margin-left:8px;">${port.clave}</span>`:''}</div>
+      <div class="detail-name">${d.nombre}</div>
+      <div class="detail-meta">
+        <span>📋 RFC: ${d.rfc}</span><span>🎂 ${d.fecha_nacimiento}</span>
+        <span>📞 ${d.telefono||'—'}</span><span>✉️ ${d.correo||'—'}</span>
+        <span>👤 ${d.gestor||'—'}</span>
+        <span><span class="badge badge-${d.estado}">${labelEstado(d.estado)}</span></span>
+      </div>
+      ${d.concepto?`<div style="margin-top:0.5rem;font-size:0.82rem;opacity:0.8;">📌 ${d.concepto}</div>`:''}
+    </div>
+    <div class="detail-grid">
+      <div class="detail-stat"><div class="val val-blue">${fmt(d.deuda_original)}</div><div class="lbl">Deuda Original</div></div>
+      <div class="detail-stat"><div class="val val-green">${fmt(totalPag)}</div><div class="lbl">Total Recuperado</div></div>
+      <div class="detail-stat"><div class="val val-red">${fmt(saldo)}</div><div class="lbl">Saldo Pendiente</div></div>
+    </div>
+    ${convHTML}
+    <div class="pagos-header"><h4>💰 Historial de Pagos</h4></div>
+    ${pagosHTML}
+    ${d.notas?`<div style="margin-top:1.2rem;padding:1rem;background:var(--bg);border-radius:8px;font-size:0.85rem;"><strong>📝 Notas:</strong> ${d.notas}</div>`:''}
+  `
+  openModal('modalDetalle')
+}
+
+// ═══ PAGO ═══
+function openModalPago(){
+  document.getElementById('p-fecha').value = new Date().toISOString().split('T')[0]
+  document.getElementById('p-monto').value = ''
+  document.getElementById('p-ref').value   = ''
+  document.getElementById('p-nota').value  = ''
+  document.getElementById('p-forma').value = 'Transferencia'
+  openModal('modalPago')
+}
+async function guardarPago(){
+  const monto = parseFloat(document.getElementById('p-monto').value)
+  const fecha = document.getElementById('p-fecha').value
+  if(!monto||!fecha){ showToast('Fecha y monto son obligatorios','error'); return }
+  const {error} = await db.from('pagos').insert({
+    deudor_id:  currentDeudorId, fecha, monto,
+    referencia: document.getElementById('p-ref').value.trim(),
+    forma_pago: document.getElementById('p-forma').value,
+    nota:       document.getElementById('p-nota').value.trim()
+  })
+  if(error){ showToast('Error: '+error.message,'error'); return }
+  const d = allDeudores.find(x=>x.id===currentDeudorId)
+  await db.from('deudores').update({deuda_actual: Math.max(0,Number(d.deuda_actual||0)-monto)}).eq('id',currentDeudorId)
+  showToast('Pago registrado','success')
+  closeModal('modalPago')
+  await cargarDatos()
+  verDetalle(currentDeudorId)
+}
+
+// ═══ IMPORTACIÓN EXCEL ═══
+function handleDragOver(e){ e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over') }
+function handleDragLeave(){ document.getElementById('dropZone').classList.remove('drag-over') }
+function handleDrop(e){ e.preventDefault(); handleDragLeave(); handleFile(e.dataTransfer.files[0]) }
+
+function handleFile(file){
+  if(!file){ return }
+  if(!file.name.match(/\.xlsx?$/i)){ showToast('Solo se aceptan archivos .xlsx o .xls','error'); return }
+  // Mostrar estado de carga
+  const dz = document.getElementById('dropZone')
+  dz.innerHTML = `<div class="drop-icon">⏳</div><div class="drop-title">Leyendo archivo...</div><div class="drop-sub">${file.name} (${(file.size/1024/1024).toFixed(1)} MB)</div>`
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array', cellDates:true})
+      // Buscar hoja DEUDORES
+      const sheetName = wb.SheetNames.find(n=>n.toUpperCase().includes('DEUDOR')) || wb.SheetNames[0]
+      const ws = wb.Sheets[sheetName]
+      const rows = XLSX.utils.sheet_to_json(ws, {
+        header:1, defval:'', raw:false,
+        dateNF:'yyyy-mm-dd'
+      })
+      // Detectar fila de encabezados — busca cualquier columna clave
+      const clavesCabecera = ['expediente','rfc','cliente_unico','nombre_cte','cliente','saldo','nombre']
+      let headerRow = -1
+      for(let i=0;i<Math.min(10,rows.length);i++){
+        const r = rows[i].map(c=>String(c||'').toLowerCase().replace(/\s+/g,'_'))
+        if(r.some(c=>clavesCabecera.some(k=>c.includes(k)))){
+          headerRow = i; break
+        }
+      }
+      if(headerRow === -1){
+        // Si no encuentra encabezados, usar la primera fila
+        headerRow = 0
+        showToast('Usando primera fila como encabezados','success')
+      }
+      const headers = rows[headerRow].map(c=>String(c||'').trim().toLowerCase()
+        .replace(/\s+/g,'_')
+        .replace(/[áä]/g,'a').replace(/[éë]/g,'e').replace(/[íï]/g,'i').replace(/[óö]/g,'o').replace(/[úü]/g,'u')
+        .replace(/[^a-z0-9_]/g,'')
+      )
+      const dataRows = rows.slice(headerRow+1).filter(r=>r.some(c=>String(c||'').trim()!==''))
+      importData = dataRows.map(row => {
+        const obj = {}
+        headers.forEach((h,i) => { obj[h] = String(row[i]||'').trim() })
+        return obj
+      })
+      mostrarPreview(importData, headers)
+    } catch(err){
+      showToast('Error al leer el archivo: '+err.message,'error')
+    }
+  }
+  reader.readAsArrayBuffer(file)
+}
+
+function mostrarPreview(data, headers){
+  const card = document.getElementById('previewCard')
+  card.style.display = 'block'
+  document.getElementById('progressCard').style.display = 'none'
+  document.getElementById('previewTitle').textContent = `Vista previa — Hoja: DEUDORES`
+  document.getElementById('previewCount').textContent = `${data.length.toLocaleString('es-MX')} registros detectados`
+  const preview = data.slice(0,20)
+  const cols = ['expediente','nombre','rfc','fecha_nacimiento','portafolio_clave','deuda_original','deuda_actual','estado']
+    .filter(c=>headers.includes(c))
+  const html = `<table>
+    <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+    <tbody>${preview.map(r=>`<tr>${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`
+  document.getElementById('previewTable').innerHTML = html
+  document.getElementById('previewCard').scrollIntoView({behavior:'smooth'})
+}
+
+async function iniciarImportacion(){
+  if(importando){ showToast('Importación en curso, espera...','error'); return }
+  const portSelect = document.getElementById('imp-portafolio').value
+  if(!importData.length){ showToast('Primero selecciona un archivo','error'); return }
+
+  importando = true
+  document.getElementById('progressCard').style.display = 'block'
+  document.getElementById('progressCard').scrollIntoView({behavior:'smooth'})
+
+  const logEl  = document.getElementById('importLog')
+  logEl.innerHTML = ''
+  let ok=0, upd=0, errores=0
+  const total = importData.length
+  document.getElementById('progTotal').textContent = total.toLocaleString('es-MX')
+
+  const addLog = (msg, cls='') => {
+    const line = document.createElement('div')
+    if(cls) line.className = cls
+    line.textContent = msg
+    logEl.appendChild(line)
+    logEl.scrollTop = logEl.scrollHeight
+  }
+  addLog(`▶ Iniciando importación de ${total.toLocaleString('es-MX')} registros...`)
+
+  // Construir mapa de portafolios por clave
+  const portMap = {}
+  allPortafolios.forEach(p=>{ portMap[p.clave.toUpperCase()] = p.id })
+
+  // Procesar en lotes
+  for(let i=0; i<total; i+=BATCH_SIZE){
+    const batch = importData.slice(i, i+BATCH_SIZE)
+    const loteNum = Math.floor(i/BATCH_SIZE)+1
+
+    const rows = batch.map((r,idx) => {
+      // Resolver portafolio — por select o por columna NOMBRE_DESPACHO
+      let portId = portSelect || null
+      const portClave = r.portafolio_clave || r.nombre_despacho || r.despacho || ''
+      if(portClave){
+        const key = portClave.trim().toUpperCase()
+        if(portMap[key]) portId = portMap[key]
+      }
+
+      // Normalizar fechas — soporta DD/MM/AAAA y AAAA-MM-DD y DD/MM/AAAA
+      const limFecha = (v) => {
+        if(!v||v==='—'||v==='N/A'||v==='S/N') return null
+        const s = String(v).trim()
+        // AAAA-MM-DD
+        let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/)
+        if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`
+        // DD/MM/AAAA
+        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
+        if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`
+        return null
+      }
+
+      const limNum = (v) => { const n=parseFloat(String(v||'0').replace(/[,$\s]/g,'')); return isNaN(n)?0:n }
+      const limStr = (v) => { const s=String(v||'').trim(); return (s===''||s==='N/A'||s==='S/N'||s.startsWith('SIN '))?null:s }
+
+      // Construir dirección completa desde campos separados
+      const dir = [
+        limStr(r.direccion_cte||r.direccion),
+        limStr(r.num_ext_cte||r.num_ext),
+        limStr(r.num_int_cte||r.num_int) ? `Int. ${limStr(r.num_int_cte||r.num_int)}` : null,
+        limStr(r.colonia_cte||r.colonia),
+        limStr(r.poblacion_cte||r.poblacion),
+        limStr(r.estado_cte||r.estado_dir),
+        limStr(r.cp_cte||r.cp) ? `C.P. ${limStr(r.cp_cte||r.cp)}` : null,
+      ].filter(Boolean).join(', ')
+
+      // Gestor: viene en formato "ID-NOMBRE", extraer solo el nombre
+      const gestorRaw = r.gerencia || r.gestor || 'Lic. Rubén Bravo'
+      const gestor = gestorRaw.includes('-') ? gestorRaw.split('-').slice(1).join('-').trim() : gestorRaw.trim()
+
+      return {
+        portafolio_id:      portId,
+        // Identificación
+        expediente:         limStr(r.cliente_unico||r.expediente||r.folio) || `IMP-${Date.now()}-${i+idx}`,
+        nombre:             limStr(r.nombre_cte||r.nombre||r.nombre_completo) || 'SIN NOMBRE',
+        rfc:                limStr(r.rfc) || '',
+        fecha_nacimiento:   limFecha(r.fecha_nacimiento||r.fecha_nac) || '1900-01-01',
+        // Datos personales
+        genero:             limStr(r.genero_cliente||r.genero),
+        edad:               parseInt(r.edad_cliente||r.edad)||null,
+        ocupacion:          limStr(r.ocupacion),
+        // Contacto
+        telefono:           limStr(r.telefono1||r.telefono||r.tel),
+        telefono2:          limStr(r.telefono2),
+        telefono3:          limStr(r.telefono3),
+        telefono4:          limStr(r.telefono4),
+        correo:             limStr(r.correo||r.email),
+        // Dirección
+        direccion:          dir || limStr(r.direccion),
+        colonia:            limStr(r.colonia_cte||r.colonia),
+        poblacion:          limStr(r.poblacion_cte||r.poblacion),
+        estado_cte:         limStr(r.estado_cte),
+        cp:                 limStr(r.cp_cte||r.cp),
+        num_ext:            limStr(r.num_ext_cte||r.num_ext),
+        num_int:            limStr(r.num_int_cte||r.num_int),
+        // Territorio
+        territorio:         limStr(r.territorio),
+        zona:               limStr(r.zona),
+        // Gestión
+        gestor:             gestor,
+        estado:             'activo',
+        clasificacion:      limStr(r.clasificacion_cte||r.clasificacion),
+        estrategia:         limStr(r.estrategia),
+        referencias:        limStr(r.referencias_domicilio||r.referencias),
+        // Deuda
+        concepto:           limStr(r.producto||r.concepto),
+        producto:           limStr(r.producto),
+        deuda_original:     limNum(r.saldo||r.deuda_original),
+        deuda_actual:       limNum(r.saldo_total||r.deuda_actual),
+        moratorios:         limNum(r.moratorios),
+        saldo_atrasado:     limNum(r['saldo atrasado']||r.saldo_atrasado),
+        saldo_requerido:    limNum(r['saldo requerido']||r.saldo_requerido),
+        pago_normal:        limNum(r.pago_normal),
+        dias_atraso:        parseInt(r.dias_atraso)||0,
+        atraso_maximo:      limStr(r.atraso_maximo),
+        // Fechas
+        fecha_inicio:       limFecha(r.fecha_asignacion||r.fecha_inicio),
+        fecha_asignacion:   limFecha(r.fecha_asignacion),
+        fecha_ultimo_pago:  limFecha(r.fecha_ultimo_pago),
+        importe_ultimo_pago:limNum(r.imp_ultimo_pago),
+        // GPS
+        latitud:            parseFloat(r.latitud)||null,
+        longitud:           parseFloat(r.longitud)||null,
+        // Aval
+        nombre_aval:        limStr(r.nombre_aval),
+        tel_aval:           limStr(r.tel_aval),
+        dir_aval:           limStr(r.calle_aval),
+        // Empleo
+        calle_empleo:       limStr(r.calle_empleo),
+        // Gestión
+        fidiapago:          limStr(r.fidiapago),
+        ultima_gestion:     limFecha(r.ultima_gestion),
+        gestion_desc:       limStr(r.gestion_desc),
+        clave_spei:         limStr(r.clave_spei),
+        pagos_cliente:      parseInt(r.pagos_cliente)||0,
+        monto_pagos:        limNum(r.monto_pagos),
+        notas:              null,
+      }
+    })
+
+    const {data, error} = await db.from('deudores').upsert(rows, {
+      onConflict: 'expediente',
+      ignoreDuplicates: false
+    })
+
+    if(error){
+      errores += batch.length
+      addLog(`✗ Lote ${loteNum}: Error — ${error.message}`, 'log-err')
+    } else {
+      ok += batch.length
+      addLog(`✓ Lote ${loteNum}: ${batch.length} registros procesados (filas ${i+1}–${Math.min(i+BATCH_SIZE,total)})`, 'log-ok')
+    }
+
+    const pct = Math.round(((i+batch.length)/total)*100)
+    document.getElementById('progBar').style.width = pct+'%'
+    document.getElementById('progPct').textContent = pct+'%'
+    document.getElementById('progOk').textContent  = ok.toLocaleString('es-MX')
+    document.getElementById('progErr').textContent = errores.toLocaleString('es-MX')
+    document.getElementById('progLabel').textContent = pct<100 ? `Procesando... (${pct}%)` : '¡Importación completada!'
+
+    // Micro-pausa para no bloquear UI
+    await new Promise(r=>setTimeout(r,50))
+  }
+
+  addLog(`\n✅ Finalizado: ${ok.toLocaleString('es-MX')} procesados, ${errores.toLocaleString('es-MX')} errores`)
+  document.getElementById('progLabel').textContent = '✅ ¡Importación completada!'
+  importando = false
+  showToast(`Importación completada: ${ok.toLocaleString('es-MX')} registros`, 'success')
+  await cargarDatos()
+}
+
+function descargarPlantilla(){
+  showToast('Descarga la plantilla desde los archivos entregados (plantilla-carga-masiva.xlsx)', 'success')
+}
+
+// ═══ NAVEGACIÓN ═══
+function showView(v){
+  ['dashboard','deudores','pagos','portafolios','importar'].forEach(n=>{
+    document.getElementById('view-'+n).style.display = n===v ? 'block' : 'none'
+    document.getElementById('nav-'+n).classList.toggle('active', n===v)
+  })
+}
+function openModal(id){ document.getElementById(id).classList.add('open') }
+function closeModal(id){ document.getElementById(id).classList.remove('open') }
+
+// ═══ HELPERS ═══
+function fmt(n){ return '$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) }
+function fmtFecha(f){ if(!f||f==='—') return '—'; try{ const d=new Date(f+'T12:00:00'); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) } catch{ return f } }
+function labelEstado(e){ return {activo:'Activo',negociacion:'Negociación',juridico:'Judicial',pagado:'Pagado'}[e]||e }
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast')
+  t.textContent=msg; t.className='toast '+type+' show'
+  setTimeout(()=>{ t.className='toast '+type },4000)
+}
+
+document.getElementById('p-fecha').value = new Date().toISOString().split('T')[0]
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open') })
+})
+</script>
+</body>
+</html>
