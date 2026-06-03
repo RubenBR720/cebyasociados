@@ -134,7 +134,7 @@
     .feature-list{list-style:none;display:flex;flex-direction:column;gap:0.7rem;}
     .feature-list li{display:flex;align-items:center;gap:10px;font-size:0.9rem;color:var(--gris-texto);}
     .feature-list li::before{content:'✓';color:var(--cafe-dorado);font-weight:700;font-size:1rem;}
-    .login-card{background:linear-gradient(145deg,var(--azul) 0%,var(--azul-claro) 100%);border-radius:20px;padding:2.5rem;box-shadow:0 20px 60px rgba(27,58,107,0.25);}
+    .login-card{background:linear-gradient(145deg,var(--azul) 0%,var(--azul-claro) 100%);border-radius:20px;padding:2.5rem 3rem;box-shadow:0 20px 60px rgba(27,58,107,0.25);width:100%;max-width:720px;}
     .login-card h4{color:white;font-size:1.2rem;font-weight:700;text-align:center;margin-bottom:0.3rem;}
     .login-card>p{color:rgba(255,255,255,0.7);text-align:center;font-size:0.82rem;margin-bottom:1.2rem;}
     .form-group{margin-bottom:1.1rem;}
@@ -396,7 +396,7 @@
     <h2 class="section-title">Portal de Acceso</h2>
     <div class="divider"></div>
     <div style="display:flex;justify-content:center;">
-      <div class="reveal" style="width:100%;max-width:520px;">
+      <div class="reveal" style="width:100%;max-width:720px;">
         <div class="login-card">
           <h4>🔐 Portal Seguro</h4>
 
@@ -742,10 +742,42 @@ function mostrarDashboard(d){
       <div class="deudor-header">
         <div class="exp-badge">Cliente ${d.expediente}</div>
         <h5>${d.nombre}</h5>
-        <div class="sub" style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.5rem;">
-          <span>🏦 Producto: <strong>${d.producto||d.concepto||'—'}</strong></span>
-          <span>👤 Gestor: <strong>${d.gestor||'Lic. Rubén Bravo'}</strong></span>
-          <span>📅 Último pago: <strong>${fmtF(d.fecha_ultimo_pago)||'Sin registro'}</strong></span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.8rem;">
+          <div style="background:rgba(255,255,255,0.08);border-radius:8px;padding:0.6rem 0.8rem;">
+            <div style="font-size:0.67rem;opacity:0.65;margin-bottom:0.15rem;">🏦 PRODUCTO</div>
+            <div style="font-weight:600;font-size:0.88rem;">${d.producto||d.concepto||'—'}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:8px;padding:0.6rem 0.8rem;">
+            <div style="font-size:0.67rem;opacity:0.65;margin-bottom:0.15rem;">👤 GESTOR</div>
+            <div style="font-weight:600;font-size:0.88rem;">${d.gestor||'Lic. Rubén Bravo'}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:8px;padding:0.6rem 0.8rem;grid-column:1/-1;">
+            <div style="font-size:0.67rem;opacity:0.65;margin-bottom:0.15rem;">📅 ÚLTIMO PAGO REGISTRADO</div>
+            <div style="font-weight:600;font-size:0.88rem;">${fmtF(d.fecha_ultimo_pago)||'Sin registro'}</div>
+          </div>
+        </div>
+
+        <!-- Campos de contacto -->
+        <div style="margin-top:1rem;border-top:1px solid rgba(255,255,255,0.15);padding-top:1rem;">
+          <div style="font-size:0.72rem;opacity:0.7;margin-bottom:0.6rem;letter-spacing:0.06em;text-transform:uppercase;">📲 ¿Quieres que te contactemos? Déjanos tus datos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+            <div>
+              <label style="font-size:0.72rem;opacity:0.7;display:block;margin-bottom:0.3rem;">Correo electrónico</label>
+              <input id="cta-correo" type="email" placeholder="tucorreo@email.com"
+                style="width:100%;padding:0.55rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:white;font-size:0.85rem;font-family:inherit;outline:none;"
+                onfocus="this.style.borderColor='var(--cafe-dorado)'" onblur="this.style.borderColor='rgba(255,255,255,0.25)'" />
+            </div>
+            <div>
+              <label style="font-size:0.72rem;opacity:0.7;display:block;margin-bottom:0.3rem;">Teléfono / WhatsApp</label>
+              <input id="cta-telefono" type="tel" placeholder="55 0000 0000"
+                style="width:100%;padding:0.55rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:white;font-size:0.85rem;font-family:inherit;outline:none;"
+                onfocus="this.style.borderColor='var(--cafe-dorado)'" onblur="this.style.borderColor='rgba(255,255,255,0.25)'" />
+            </div>
+          </div>
+          <button onclick="enviarContacto('${d.expediente}','${d.nombre}','${d.gestor||'Lic. Rubén Bravo'}')"
+            style="margin-top:0.8rem;width:100%;padding:0.7rem;background:linear-gradient(135deg,var(--cafe-dorado),var(--cafe));color:white;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;letter-spacing:0.02em;">
+            💬 Contáctame por WhatsApp
+          </button>
         </div>
       </div>
 
@@ -803,6 +835,21 @@ function reenviarPin(){
   document.getElementById('dot1').className='step-dot active'; document.getElementById('dot1').textContent='1'
   document.getElementById('dot2').className='step-dot'; document.getElementById('dot2').textContent='2'
   pinGenerado=null; if(pinTimer)clearTimeout(pinTimer); generarCaptcha()
+}
+
+function enviarContacto(exp, nombre, gestor){
+  const correo  = document.getElementById('cta-correo').value.trim()
+  const telefono= document.getElementById('cta-telefono').value.trim()
+  if(!correo && !telefono){ alert('Por favor ingresa al menos tu correo o teléfono.'); return }
+  const msg = encodeURIComponent(
+    '📋 *Solicitud de Contacto — Bravo & Asociados*\n\n' +
+    '👤 *Cliente:* ' + nombre + '\n' +
+    '🔢 *No. Cliente:* ' + exp + '\n' +
+    (correo   ? '✉️ *Correo:* '   + correo   + '\n' : '') +
+    (telefono ? '📞 *Teléfono:* ' + telefono + '\n' : '') +
+    '\nEl cliente solicita ser contactado.'
+  )
+  window.open('https://wa.me/5215597675856?text='+msg, '_blank')
 }
 
 function fmt(n){ return '$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) }
