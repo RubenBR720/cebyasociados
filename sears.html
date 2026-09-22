@@ -1,4 +1,4 @@
-<!doctype html>
+  <!doctype html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -672,7 +672,7 @@ async function consultar(){
       .from('deudores')
       .select('*')
       .eq('rfc', rfc)
-      .single();
+      .maybeSingle();
     data = res.data;
     error = res.error;
   } else {
@@ -689,8 +689,16 @@ async function consultar(){
   btn.innerHTML = 'Consultar';
 
   if(error || !data){
-    errEl.textContent = 'RFC no encontrado en nuestra base de datos. Verifica e intenta de nuevo.';
+    // Mostrar error detallado para diagnóstico
+    const code = error?.code || '';
+    const msg  = error?.message || 'sin respuesta';
+    if(code === 'PGRST116'){
+      errEl.textContent = 'RFC no encontrado en nuestra base de datos. Verifica e intenta de nuevo.';
+    } else {
+      errEl.textContent = `Error de conexión [${code}]: ${msg}. Intenta de nuevo o contacta soporte.`;
+    }
     errEl.style.display = 'block';
+    console.error('Supabase error:', error);
     return;
   }
 
