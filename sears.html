@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal de Clientes Sears — Bravo & Asociados</title>
+<meta name="description" content="Consulta tu adeudo Sears y opciones de convenio de pago.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== TOKENS ===== */
+:root{
+  --navy:   #060E22;
+  --navy2:  #0D1B3E;
+  --navy3:  #122455;
+  --gold:   #C9991A;
+  --gold-l: #E8B84B;
+  --gold-d: #A07A10;
+  --text:   #F0F2F8;
+  --text2:  #9AA6C4;
+  --border: rgba(201,153,26,.18);
+  --card:   rgba(18,36,85,.55);
+  --wa:     #25D366;
+}
+
+/* ===== RESET ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--navy);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:0 16px 48px;
+}
+
+/* ===== AVISO MODAL OVERLAY ===== */
+#privacy-overlay{
+  position:fixed;inset:0;
+  background:rgba(6,14,34,.97);
+  z-index:1000;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  overflow-y:auto;
+  padding:24px 16px 40px;
+}
+.privacy-box{
+  width:100%;max-width:520px;
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:28px 24px 24px;
+  margin:auto;
+}
+.privacy-eyebrow{
+  font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:10px;
+}
+.privacy-box h2{
+  font-family:'Playfair Display',serif;
+  font-size:1.35rem;font-weight:700;
+  margin-bottom:18px;line-height:1.3;
+}
+.privacy-scroll{
+  max-height:320px;
+  overflow-y:auto;
+  border:1px solid var(--border);
+  padding:16px;
+  margin-bottom:20px;
+  font-size:.8rem;color:var(--text2);line-height:1.7;
+  background:rgba(6,14,34,.4);
+}
+.privacy-scroll::-webkit-scrollbar{width:4px}
+.privacy-scroll::-webkit-scrollbar-track{background:transparent}
+.privacy-scroll::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:2px}
+.privacy-scroll h3{
+  color:var(--gold-l);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;
+  margin-top:16px;margin-bottom:6px;
+}
+.privacy-scroll h3:first-child{margin-top:0}
+.privacy-scroll p{margin-bottom:8px}
+.privacy-scroll strong{color:var(--text)}
+
+.scroll-hint{
+  font-size:.68rem;color:var(--text2);text-align:center;
+  margin-bottom:14px;letter-spacing:.04em;
+  opacity:.7;
+}
+
+.confirm-wrap{
+  display:flex;align-items:flex-start;gap:12px;
+  margin-bottom:18px;
+  cursor:pointer;
+}
+.confirm-wrap input[type="checkbox"]{
+  width:18px;height:18px;flex-shrink:0;margin-top:2px;
+  accent-color:var(--gold);cursor:pointer;
+}
+.confirm-label{
+  font-size:.82rem;line-height:1.5;color:var(--text2);
+  cursor:pointer;
+}
+.confirm-label strong{color:var(--text)}
+
+#btn-aceptar{
+  display:block;width:100%;
+  background:#2A2010;
+  color:#6A5A30;
+  font-weight:700;font-size:.95rem;
+  padding:14px;
+  border:1.5px solid #3A3018;
+  cursor:not-allowed;
+  transition:all .25s;
+}
+#btn-aceptar.ready{
+  background:var(--gold);
+  color:var(--navy);
+  border-color:var(--gold);
+  cursor:pointer;
+}
+#btn-aceptar.ready:hover{background:var(--gold-l);border-color:var(--gold-l)}
+
+.privacy-footer-note{
+  margin-top:14px;
+  font-size:.68rem;color:var(--text2);
+  text-align:center;line-height:1.5;
+}
+
+/* ===== HEADER ===== */
+header{
+  width:100%;
+  max-width:480px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:24px 0 32px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:36px;
+}
+.logo-mark{
+  width:42px;height:42px;
+  background:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;
+  font-weight:900;font-size:1.3rem;
+  color:var(--navy);flex-shrink:0;
+}
+.logo-text{line-height:1.2}
+.logo-name{font-weight:700;font-size:.92rem;color:var(--text)}
+.logo-sub{font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--gold-l)}
+
+/* ===== MAIN CARD ===== */
+.card{
+  width:100%;max-width:480px;
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:28px 24px;
+}
+
+/* ===== STEP 1 — RFC INPUT ===== */
+#step-login h1{
+  font-family:'Playfair Display',serif;
+  font-size:1.55rem;font-weight:700;
+  margin-bottom:6px;
+}
+#step-login .sub{
+  font-size:.85rem;color:var(--text2);
+  margin-bottom:28px;line-height:1.5;
+}
+.field-lbl{
+  display:block;
+  font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:7px;
+}
+.field-inp{
+  width:100%;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid var(--border);
+  color:var(--text);
+  font-size:1rem;font-weight:600;
+  letter-spacing:.05em;
+  padding:13px 15px;
+  outline:none;
+  transition:border-color .2s;
+  text-transform:uppercase;
+}
+.field-inp::placeholder{font-weight:400;letter-spacing:0;text-transform:none;color:var(--text2)}
+.field-inp:focus{border-color:var(--gold)}
+.btn-primary{
+  display:block;width:100%;margin-top:16px;
+  background:var(--gold);color:var(--navy);
+  font-weight:700;font-size:.95rem;
+  padding:14px;
+  border:none;cursor:pointer;
+  transition:background .2s;
+}
+.btn-primary:hover{background:var(--gold-l)}
+.btn-primary:disabled{background:#4A4020;color:#7A6830;cursor:not-allowed}
+.error-msg{
+  margin-top:12px;
+  font-size:.82rem;color:#FF6B6B;
+  display:none;
+}
+.note{
+  margin-top:20px;
+  font-size:.75rem;color:var(--text2);
+  line-height:1.5;
+  border-top:1px solid var(--border);
+  padding-top:16px;
+}
+.note strong{color:var(--text)}
+
+/* ===== STEP 2 — CUENTA ===== */
+#step-cuenta{display:none}
+.account-badge{
+  background:rgba(201,153,26,.1);
+  border:1px solid var(--border);
+  padding:16px;
+  margin-bottom:22px;
+}
+.account-badge .lbl{
+  font-size:.65rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:4px;
+}
+.account-badge .val{font-weight:700;font-size:1rem;color:var(--text)}
+.account-badge .val.big{
+  font-family:'Playfair Display',serif;
+  font-size:1.6rem;color:var(--gold-l);
+}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.info-cell{
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:14px;
+}
+.info-cell .lbl{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:4px}
+.info-cell .val{font-weight:600;font-size:.95rem}
+
+/* ===== OPCIONES ===== */
+.opts-title{
+  font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:12px;
+}
+.opt-card{
+  border:1.5px solid var(--border);
+  padding:16px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:border-color .2s, background .2s;
+  position:relative;
+}
+.opt-card:hover{border-color:var(--gold);background:rgba(201,153,26,.05)}
+.opt-card.selected{
+  border-color:var(--gold);
+  background:rgba(201,153,26,.1);
+}
+.opt-radio{
+  position:absolute;top:16px;right:16px;
+  width:18px;height:18px;
+  border:2px solid var(--text2);
+  border-radius:50%;
+  transition:border-color .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.opt-card.selected .opt-radio{border-color:var(--gold)}
+.opt-radio::after{
+  content:'';width:9px;height:9px;
+  border-radius:50%;background:var(--gold);
+  opacity:0;transition:opacity .2s;
+}
+.opt-card.selected .opt-radio::after{opacity:1}
+.opt-num{
+  font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:4px;
+}
+.opt-titulo{font-weight:700;font-size:.95rem;margin-bottom:6px;padding-right:28px}
+.opt-monto{
+  font-family:'Playfair Display',serif;
+  font-size:1.4rem;font-weight:700;color:var(--gold-l);
+  margin-bottom:4px;
+}
+.opt-desc{font-size:.78rem;color:var(--text2);line-height:1.4}
+
+/* ===== WHATSAPP ===== */
+#wa-btn-wrap{
+  margin-top:20px;
+  display:none;
+}
+#wa-btn-wrap.visible{display:block}
+.btn-wa{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;
+  background:var(--wa);color:#fff;
+  font-weight:700;font-size:1rem;
+  padding:15px;
+  border:none;cursor:pointer;
+  transition:background .2s;
+  text-decoration:none;
+}
+.btn-wa:hover{background:#1aad52}
+.btn-wa svg{flex-shrink:0}
+.wa-note{
+  margin-top:10px;font-size:.73rem;color:var(--text2);
+  text-align:center;line-height:1.4;
+}
+
+/* ===== PAY NOTE ===== */
+.pay-note{
+  margin-top:18px;
+  background:rgba(6,14,34,.6);
+  border:1px solid var(--border);
+  padding:14px;
+  font-size:.78rem;color:var(--text2);line-height:1.5;
+}
+.pay-note strong{color:var(--text)}
+
+/* ===== BACK ===== */
+.btn-back{
+  margin-top:20px;
+  background:none;border:none;
+  font-size:.82rem;color:var(--text2);
+  cursor:pointer;text-decoration:underline;
+  padding:0;
+}
+.btn-back:hover{color:var(--text)}
+
+/* ===== LOADING ===== */
+.spinner{
+  display:inline-block;
+  width:22px;height:22px;
+  border:3px solid rgba(201,153,26,.25);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:8px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== FOOTER ===== */
+footer{
+  margin-top:40px;
+  font-size:.7rem;color:var(--text2);
+  text-align:center;line-height:1.6;
+}
+footer a{color:var(--gold-l);text-decoration:none}
+
+/* ===== DEMO BADGE ===== */
+.demo-badge{
+  display:none;
+  background:rgba(201,153,26,.15);
+  border:1px solid var(--gold);
+  color:var(--gold-l);
+  font-size:.72rem;letter-spacing:.06em;
+  padding:7px 14px;
+  margin-bottom:20px;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== AVISO DE PRIVACIDAD MODAL ===================== -->
+<div id="privacy-overlay" role="dialog" aria-modal="true" aria-labelledby="privacy-title">
+  <div class="privacy-box">
+    <div class="privacy-eyebrow">Antes de continuar</div>
+    <h2 id="privacy-title">Aviso de Privacidad y Consentimiento</h2>
+
+    <div class="privacy-scroll" id="privacy-scroll">
+      <h3>Responsable del tratamiento</h3>
+      <p><strong>Cobranza Especializada Bravo y Asociados S.A.S. de C.V.</strong> (en adelante "CEB"), con RFC <strong>CEB2501307R0</strong>, con domicilio en la Ciudad de México, es el responsable del tratamiento de sus datos personales, en términos de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento.</p>
+
+      <h3>Datos personales que se recaban</h3>
+      <p>A través de este portal se recaba y procesa la siguiente información: <strong>Registro Federal de Contribuyentes (RFC)</strong>, nombre completo, número de cuenta (últimos dígitos), saldo adeudado y opciones de convenio asignadas. Estos datos fueron previamente proporcionados por la entidad cedente de la cartera (acreedor original) o se obtienen del propio usuario al ingresar su RFC.</p>
+
+      <h3>Finalidades del tratamiento</h3>
+      <p>Sus datos se utilizan exclusivamente para: (a) identificar y mostrar la información de su expediente de cobranza; (b) presentarle opciones de convenio de pago personalizadas; (c) facilitar el contacto vía WhatsApp para formalizar un acuerdo de pago; (d) cumplir con obligaciones legales y regulatorias en materia de cobranza extrajudicial conforme a las Disposiciones de carácter general aplicables a los Despachos de Cobranza (CONDUSEF).</p>
+
+      <h3>Transferencias</h3>
+      <p>CEB podrá transferir sus datos al acreedor original de la cartera (Sears / Grupo Sanborns) exclusivamente para efectos de la liquidación o convenio de pago pactado. No se realizan otras transferencias sin su consentimiento, salvo las previstas por la ley.</p>
+
+      <h3>Medios de contacto y derechos ARCO</h3>
+      <p>Usted tiene derecho de Acceso, Rectificación, Cancelación y Oposición (ARCO) al tratamiento de sus datos personales. Para ejercer estos derechos o revocar su consentimiento, contacte a: <strong>rubenceo@cebyasociados.com</strong> · Tel. +52 (55) 9767-5856. Responderemos en un plazo no mayor a 20 días hábiles.</p>
+
+      <h3>Uso de cookies y tecnologías</h3>
+      <p>Este portal no utiliza cookies de rastreo ni almacena su información en servidores de terceros distintos a los necesarios para operar la base de datos de convenios (Supabase, Inc.). La consulta no genera un historial permanente en el navegador.</p>
+
+      <h3>Cambios al aviso</h3>
+      <p>Cualquier modificación a este Aviso de Privacidad se publicará en <strong>cebyasociados.com</strong>. La fecha de última actualización es <strong>septiembre 2026</strong>.</p>
+    </div>
+
+    <p class="scroll-hint">↑ Desplázate para leer el aviso completo</p>
+
+    <label class="confirm-wrap" for="chk-acepto">
+      <input type="checkbox" id="chk-acepto" onchange="toggleAceptar()">
+      <span class="confirm-label">
+        Confirmo que <strong>soy el titular de los datos</strong> que voy a consultar y que he leído y acepto el Aviso de Privacidad de Cobranza Especializada Bravo y Asociados S.A.S. de C.V.
+      </span>
+    </label>
+
+    <button id="btn-aceptar" disabled onclick="cerrarAviso()">Acepto y Continuar</button>
+
+    <p class="privacy-footer-note">
+      Al continuar confirmas que eres mayor de edad y titular de la cuenta.<br>
+      Registro CONDUSEF · Despacho de Cobranza regulado · RFC CEB2501307R0
+    </p>
+  </div>
+</div>
+
+<!-- ===================== PORTAL ===================== -->
+<header>
+  <div class="logo-mark">B</div>
+  <div class="logo-text">
+    <div class="logo-name">Bravo &amp; Asociados</div>
+    <div class="logo-sub">Portal de Clientes · Sears</div>
+  </div>
+</header>
+
+<!-- STEP 1: RFC LOGIN -->
+<div class="card" id="step-login">
+  <h1>Consulta tu cuenta</h1>
+  <p class="sub">Ingresa tu RFC para ver tu saldo Sears y las opciones de convenio disponibles.</p>
+
+  <label class="field-lbl" for="rfc-input">RFC</label>
+  <input
+    class="field-inp"
+    id="rfc-input"
+    type="text"
+    maxlength="13"
+    placeholder="XXXX######XXX"
+    autocomplete="off"
+    autocapitalize="characters"
+    spellcheck="false"
+  >
+  <div class="error-msg" id="error-msg">RFC no encontrado. Verifica e intenta de nuevo.</div>
+  <button class="btn-primary" id="btn-consultar" onclick="consultar()">Consultar</button>
+
+  <p class="note">
+    <strong>¿Por qué pedimos tu RFC?</strong><br>
+    Lo utilizamos únicamente para identificar tu expediente Sears. No almacenamos ningún dato adicional en esta consulta.
+  </p>
+</div>
+
+<!-- STEP 2: CUENTA Y OPCIONES -->
+<div class="card" id="step-cuenta">
+  <div class="demo-badge" id="demo-badge">⚠️ MODO DEMO — Datos de ejemplo</div>
+
+  <!-- Info del deudor -->
+  <div class="info-grid">
+    <div class="info-cell" style="grid-column:1/-1">
+      <div class="lbl">Nombre</div>
+      <div class="val" id="d-nombre">—</div>
+    </div>
+    <div class="info-cell">
+      <div class="lbl">Terminación de cuenta</div>
+      <div class="val" id="d-cuenta">—</div>
+    </div>
+    <div class="info-cell">
+      <div class="lbl">RFC</div>
+      <div class="val" id="d-rfc" style="font-size:.85rem">—</div>
+    </div>
+  </div>
+
+  <div class="account-badge">
+    <div class="lbl">Saldo total adeudado</div>
+    <div class="val big" id="d-saldo">—</div>
+  </div>
+
+  <!-- Opciones -->
+  <p class="opts-title">Selecciona tu opción de convenio</p>
+
+  <div class="opt-card" id="opt1" onclick="seleccionarOpcion(1)">
+    <div class="opt-radio"></div>
+    <div class="opt-num">Opción 01</div>
+    <div class="opt-titulo" id="o1-titulo">—</div>
+    <div class="opt-monto" id="o1-monto">—</div>
+    <div class="opt-desc" id="o1-desc"></div>
+  </div>
+
+  <div class="opt-card" id="opt2" onclick="seleccionarOpcion(2)">
+    <div class="opt-radio"></div>
+    <div class="opt-num">Opción 02</div>
+    <div class="opt-titulo" id="o2-titulo">—</div>
+    <div class="opt-monto" id="o2-monto">—</div>
+    <div class="opt-desc" id="o2-desc"></div>
+  </div>
+
+  <div class="opt-card" id="opt3" onclick="seleccionarOpcion(3)">
+    <div class="opt-radio"></div>
+    <div class="opt-num">Opción 03</div>
+    <div class="opt-titulo" id="o3-titulo">—</div>
+    <div class="opt-monto" id="o3-monto">—</div>
+    <div class="opt-desc" id="o3-desc"></div>
+  </div>
+
+  <!-- WhatsApp -->
+  <div id="wa-btn-wrap">
+    <a id="wa-link" class="btn-wa" href="#" target="_blank" rel="noopener">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      Solicita Convenio
+    </a>
+    <p class="wa-note">Un asesor te contactará para formalizar tu convenio de pago.</p>
+  </div>
+
+  <!-- Nota de pago -->
+  <div class="pay-note">
+    <strong>¿Cómo realizar tu pago?</strong><br>
+    El pago de tu adeudo se realiza directamente en cualquier tienda <strong>Sears</strong> o a través de la <strong>aplicación Sears</strong>. Al confirmar tu convenio, te proporcionaremos los detalles exactos.
+  </div>
+
+  <button class="btn-back" onclick="regresar()">← Consultar otro RFC</button>
+</div>
+
+<footer>
+  <div>Cobranza Especializada Bravo &amp; Asociados S.A.S. de C.V.</div>
+  <div>RFC: CEB2501307R0 · <a href="/">cebyasociados.com</a></div>
+  <div style="margin-top:6px">Registro CONDUSEF · Despacho de Cobranza regulado</div>
+  <div style="margin-top:6px"><a href="/" style="font-size:.65rem">Ver aviso de privacidad completo</a></div>
+</footer>
+
+<script>
+// ============================================================
+//  CONFIGURACIÓN SUPABASE
+//  Reemplaza estos valores con los de tu proyecto en Supabase
+//  https://supabase.com → Settings → API
+// ============================================================
+const SUPABASE_URL = 'TU_SUPABASE_URL';      // ej: https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY'; // llave anon/public
+
+// WhatsApp de CEB
+const WA_NUMBER = '5215597675856';
+
+// ============================================================
+//  MODO DEMO (se activa automáticamente si Supabase no está configurado)
+// ============================================================
+const DEMO_RFC = 'BARG900101ABC';
+const DEMO_DATA = {
+  rfc: 'BARG900101ABC',
+  nombre: 'María García Ramírez',
+  terminacion_cuenta: '****4521',
+  saldo_total: 12450.00,
+  opcion1_titulo: 'Pago único con 40% de descuento',
+  opcion1_monto: 7470.00,
+  opcion1_desc: 'Liquida tu adeudo en una sola exhibición y obtén el mayor descuento.',
+  opcion2_titulo: 'Plan 3 meses sin intereses',
+  opcion2_monto: 4150.00,
+  opcion2_desc: '3 pagos de $4,150.00. Sin intereses ni cargos adicionales.',
+  opcion3_titulo: 'Plan 6 meses con 20% de descuento',
+  opcion3_monto: 1660.00,
+  opcion3_desc: '6 pagos de $1,660.00. Descuento de 20% aplicado al saldo total.'
+};
+
+// ============================================================
+let supabaseClient = null;
+let currentData = null;
+let opcionSeleccionada = null;
+
+function isSupabaseConfigured(){
+  return SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY';
+}
+
+if(isSupabaseConfigured()){
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+// ===== AVISO DE PRIVACIDAD =====
+function toggleAceptar(){
+  const chk = document.getElementById('chk-acepto');
+  const btn = document.getElementById('btn-aceptar');
+  if(chk.checked){
+    btn.disabled = false;
+    btn.classList.add('ready');
+  } else {
+    btn.disabled = true;
+    btn.classList.remove('ready');
+  }
+}
+
+function cerrarAviso(){
+  if(!document.getElementById('chk-acepto').checked) return;
+  const overlay = document.getElementById('privacy-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity .3s';
+  setTimeout(()=>{ overlay.style.display = 'none'; }, 300);
+}
+
+// Bloquear scroll del body mientras el modal está abierto
+document.body.style.overflow = 'hidden';
+document.getElementById('privacy-overlay').addEventListener('transitionend', function(){
+  if(this.style.display === 'none'){
+    document.body.style.overflow = '';
+  }
+});
+
+// ===== PORTAL =====
+function fmt(n){
+  return '$' + Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+async function consultar(){
+  const rfc = document.getElementById('rfc-input').value.trim().toUpperCase();
+  const errEl = document.getElementById('error-msg');
+  const btn = document.getElementById('btn-consultar');
+
+  errEl.style.display = 'none';
+
+  if(rfc.length < 12){
+    errEl.textContent = 'Ingresa un RFC válido (12 o 13 caracteres).';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Consultando...';
+
+  let data = null;
+  let error = null;
+
+  if(isSupabaseConfigured()){
+    const res = await supabaseClient
+      .from('deudores')
+      .select('*')
+      .eq('rfc', rfc)
+      .single();
+    data = res.data;
+    error = res.error;
+  } else {
+    // Modo demo
+    await new Promise(r => setTimeout(r, 900));
+    if(rfc === DEMO_RFC){
+      data = DEMO_DATA;
+    } else {
+      error = { message: 'not found' };
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Consultar';
+
+  if(error || !data){
+    errEl.textContent = 'RFC no encontrado en nuestra base de datos. Verifica e intenta de nuevo.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  currentData = data;
+  mostrarCuenta(data, !isSupabaseConfigured());
+}
+
+function mostrarCuenta(d, isDemo){
+  document.getElementById('d-nombre').textContent  = d.nombre || '—';
+  document.getElementById('d-cuenta').textContent  = d.terminacion_cuenta || '—';
+  document.getElementById('d-rfc').textContent     = d.rfc || '—';
+  document.getElementById('d-saldo').textContent   = fmt(d.saldo_total);
+
+  document.getElementById('o1-titulo').textContent = d.opcion1_titulo || 'Opción no disponible';
+  document.getElementById('o1-monto').textContent  = d.opcion1_monto ? fmt(d.opcion1_monto) : '—';
+  document.getElementById('o1-desc').textContent   = d.opcion1_desc  || '';
+
+  document.getElementById('o2-titulo').textContent = d.opcion2_titulo || 'Opción no disponible';
+  document.getElementById('o2-monto').textContent  = d.opcion2_monto ? fmt(d.opcion2_monto) : '—';
+  document.getElementById('o2-desc').textContent   = d.opcion2_desc  || '';
+
+  document.getElementById('o3-titulo').textContent = d.opcion3_titulo || 'Opción no disponible';
+  document.getElementById('o3-monto').textContent  = d.opcion3_monto ? fmt(d.opcion3_monto) : '—';
+  document.getElementById('o3-desc').textContent   = d.opcion3_desc  || '';
+
+  // Ocultar opciones sin datos
+  ['opt1','opt2','opt3'].forEach((id,i)=>{
+    const k = i+1;
+    document.getElementById(id).style.display =
+      d['opcion'+k+'_titulo'] ? 'block' : 'none';
+  });
+
+  document.getElementById('demo-badge').style.display = isDemo ? 'block' : 'none';
+
+  document.getElementById('step-login').style.display  = 'none';
+  document.getElementById('step-cuenta').style.display = 'block';
+  document.getElementById('wa-btn-wrap').classList.remove('visible');
+  opcionSeleccionada = null;
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function seleccionarOpcion(n){
+  ['opt1','opt2','opt3'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  document.getElementById('opt'+n).classList.add('selected');
+  opcionSeleccionada = n;
+
+  const d = currentData;
+  const titulo  = d['opcion'+n+'_titulo']  || 'convenio';
+  const montoN  = d['opcion'+n+'_monto'];
+  const monto   = montoN ? fmt(montoN) : '';
+
+  const msg = encodeURIComponent(
+    `Hola, soy *${d.nombre}* (RFC: ${d.rfc}).\n` +
+    `Consulté mi cuenta Sears terminación *${d.terminacion_cuenta}*.\n` +
+    `Mi saldo es de *${fmt(d.saldo_total)}* y estoy interesado/a en:\n\n` +
+    `*Opción ${n}: ${titulo}*${monto ? ' — '+monto : ''}.\n\n` +
+    `Por favor, solicito formalizar mi convenio de pago.`
+  );
+
+  document.getElementById('wa-link').href =
+    `https://wa.me/${WA_NUMBER}?text=${msg}`;
+
+  const wrap = document.getElementById('wa-btn-wrap');
+  wrap.classList.add('visible');
+  wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function regresar(){
+  document.getElementById('step-cuenta').style.display = 'none';
+  document.getElementById('step-login').style.display  = 'block';
+  document.getElementById('error-msg').style.display   = 'none';
+  document.getElementById('rfc-input').value = '';
+  currentData = null;
+  opcionSeleccionada = null;
+}
+
+// Enter key en el input
+document.getElementById('rfc-input').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') consultar();
+  const allowed = /^[A-Za-z0-9]$/;
+  if(e.key.length === 1 && !allowed.test(e.key)) e.preventDefault();
+});
+</script>
+
+<!--
+============================================================
+  INSTRUCCIONES SUPABASE
+============================================================
+1. Crea proyecto en https://supabase.com
+2. SQL Editor → ejecuta el CREATE TABLE de deudores
+3. Settings → API → copia URL y anon key
+4. Reemplaza SUPABASE_URL y SUPABASE_ANON_KEY arriba
+5. Sube a GitHub como sears.html → Vercel lo sirve en /sears
+============================================================
+-->
+</body>
+</html>
