@@ -480,6 +480,10 @@ footer a{color:var(--gold-l);text-decoration:none}
       <div class="lbl">Nombre</div>
       <div class="val" id="d-nombre">—</div>
     </div>
+    <div class="info-cell" style="grid-column:1/-1" id="d-producto-wrap">
+      <div class="lbl">Producto</div>
+      <div class="val" id="d-producto">—</div>
+    </div>
     <div class="info-cell">
       <div class="lbl">Terminación de cuenta</div>
       <div class="val" id="d-cuenta">—</div>
@@ -730,38 +734,76 @@ function regresarLogin(){
   currentData = null;
 }
 
+// ===== CÁLCULO AUTOMÁTICO DE OPCIONES =====
+function calcularOpciones(saldo){
+  // Plazo según rango de saldo
+  let meses;
+  if(saldo <= 3000)       meses = 3;
+  else if(saldo <= 6000)  meses = 6;
+  else if(saldo <= 20000) meses = 8;
+  else                    meses = 12;
+
+  const montoUnico     = saldo * 0.30;          // 70% descuento, pago único
+  const saldoDesc60    = saldo * 0.40;          // 60% descuento, 2 pagos
+  const montoCadaPago  = saldoDesc60 / 2;       // 50% en sep + 50% en oct
+  const montoPorMes    = saldo / meses;         // sin descuento, plan mensual
+
+  return {
+    opcion1_titulo: 'Pago único — 70% de descuento',
+    opcion1_monto:  montoUnico,
+    opcion1_desc:   `Un solo pago de ${fmt(montoUnico)}. Ahorras ${fmt(saldo - montoUnico)} sobre tu saldo total.`,
+
+    opcion2_titulo: 'Dos pagos — 60% de descuento',
+    opcion2_monto:  montoCadaPago,
+    opcion2_desc:   `Primer pago en septiembre y segundo en octubre, ${fmt(montoCadaPago)} cada uno. Ahorras ${fmt(saldo - saldoDesc60)}.`,
+
+    opcion3_titulo: `Plan ${meses} meses sin descuento`,
+    opcion3_monto:  montoPorMes,
+    opcion3_desc:   `${meses} pagos mensuales iguales de ${fmt(montoPorMes)} sobre el saldo total sin intereses adicionales.`
+  };
+}
+
 function mostrarCuenta(d, isDemo){
+  const saldo = Number(d.saldo_total) || 0;
+  const opts  = calcularOpciones(saldo);
+
+  // Mezclar opciones calculadas con datos del deudor
+  const data  = Object.assign({}, d, opts);
+  currentData = data;
+
   document.getElementById('d-nombre').textContent  = d.nombre || '—';
   document.getElementById('d-cuenta').textContent  = d.terminacion_cuenta || '—';
   document.getElementById('d-rfc').textContent     = d.rfc || '—';
-  document.getElementById('d-saldo').textContent   = fmt(d.saldo_total);
+  document.getElementById('d-saldo').textContent   = fmt(saldo);
+  const prodWrap = document.getElementById('d-producto-wrap');
+  if(d.producto){
+    document.getElementById('d-producto').textContent = d.producto;
+    prodWrap.style.display = 'block';
+  } else {
+    prodWrap.style.display = 'none';
+  }
 
-  document.getElementById('o1-titulo').textContent = d.opcion1_titulo || 'Opción no disponible';
-  document.getElementById('o1-monto').textContent  = d.opcion1_monto ? fmt(d.opcion1_monto) : '—';
-  document.getElementById('o1-desc').textContent   = d.opcion1_desc  || '';
+  document.getElementById('o1-titulo').textContent = opts.opcion1_titulo;
+  document.getElementById('o1-monto').textContent  = fmt(opts.opcion1_monto);
+  document.getElementById('o1-desc').textContent   = opts.opcion1_desc;
 
-  document.getElementById('o2-titulo').textContent = d.opcion2_titulo || 'Opción no disponible';
-  document.getElementById('o2-monto').textContent  = d.opcion2_monto ? fmt(d.opcion2_monto) : '—';
-  document.getElementById('o2-desc').textContent   = d.opcion2_desc  || '';
+  document.getElementById('o2-titulo').textContent = opts.opcion2_titulo;
+  document.getElementById('o2-monto').textContent  = fmt(opts.opcion2_monto);
+  document.getElementById('o2-desc').textContent   = opts.opcion2_desc;
 
-  document.getElementById('o3-titulo').textContent = d.opcion3_titulo || 'Opción no disponible';
-  document.getElementById('o3-monto').textContent  = d.opcion3_monto ? fmt(d.opcion3_monto) : '—';
-  document.getElementById('o3-desc').textContent   = d.opcion3_desc  || '';
+  document.getElementById('o3-titulo').textContent = opts.opcion3_titulo;
+  document.getElementById('o3-monto').textContent  = fmt(opts.opcion3_monto);
+  document.getElementById('o3-desc').textContent   = opts.opcion3_desc;
 
-  // Ocultar opciones sin datos
-  ['opt1','opt2','opt3'].forEach((id,i)=>{
-    const k = i+1;
-    document.getElementById(id).style.display =
-      d['opcion'+k+'_titulo'] ? 'block' : 'none';
+  ['opt1','opt2','opt3'].forEach(id=>{
+    document.getElementById(id).style.display = 'block';
   });
 
   document.getElementById('demo-badge').style.display = isDemo ? 'block' : 'none';
-
   document.getElementById('step-login').style.display  = 'none';
   document.getElementById('step-cuenta').style.display = 'block';
   document.getElementById('wa-btn-wrap').classList.remove('visible');
   opcionSeleccionada = null;
-
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
