@@ -402,7 +402,7 @@ footer a{color:var(--gold-l);text-decoration:none}
       </span>
     </label>
 
-    <button id="btn-aceptar" disabled onclick="cerrarAviso()">Acepto y Continuar</button>
+    <button id="btn-aceptar" disabled onclick="cerrarAviso()">Acepto y Continuar <span id="countdown" style="font-weight:400;font-size:.85em;opacity:.8">(10)</span></button>
 
     <p class="privacy-footer-note">
       Al continuar confirmas que eres mayor de edad y titular de la cuenta.<br>
@@ -442,6 +442,31 @@ footer a{color:var(--gold-l);text-decoration:none}
   <p class="note">
     <strong>¿Por qué pedimos tu RFC?</strong><br>
     Lo utilizamos únicamente para identificar tu expediente Sears. No almacenamos ningún dato adicional en esta consulta.
+  </p>
+</div>
+
+<!-- STEP 1.5: VERIFICACIÓN DE CUENTA -->
+<div class="card" id="step-verify" style="display:none">
+  <h1 style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:8px">Verifica tu identidad</h1>
+  <p class="sub">Por seguridad, ingresa los <strong>últimos 4 dígitos</strong> de tu número de cuenta Sears.</p>
+
+  <label class="field-lbl" for="digits-input">Últimos 4 dígitos de cuenta</label>
+  <input
+    class="field-inp"
+    id="digits-input"
+    type="text"
+    maxlength="4"
+    placeholder="_ _ _ _"
+    autocomplete="off"
+    inputmode="numeric"
+    pattern="[0-9]*"
+  >
+  <div class="error-msg" id="error-verify">Dígitos incorrectos. Verifica tu número de cuenta.</div>
+  <button class="btn-primary" id="btn-verificar" onclick="verificar()">Confirmar</button>
+  <button class="btn-back" onclick="regresarLogin()" style="display:block;margin-top:14px">← Ingresar otro RFC</button>
+  <p class="note" style="margin-top:16px">
+    <strong>¿Dónde encuentro mi número de cuenta?</strong><br>
+    En tu estado de cuenta Sears, en tu tarjeta o en cualquier recibo de pago.
   </p>
 </div>
 
@@ -534,7 +559,7 @@ const SUPABASE_URL = 'https://grqhvetlfkeqinjnbzhx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_MnOP8yjFqEiuEnrynkVm-g_QHdxm8V3';
 
 // WhatsApp de CEB
-const WA_NUMBER = '5215597675856';
+const WA_NUMBER = '525597675856';
 
 // ============================================================
 //  MODO DEMO (se activa automáticamente si Supabase no está configurado)
@@ -569,34 +594,50 @@ if(isSupabaseConfigured()){
   supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
-// ===== AVISO DE PRIVACIDAD =====
-function toggleAceptar(){
-  const chk = document.getElementById('chk-acepto');
-  const btn = document.getElementById('btn-aceptar');
-  if(chk.checked){
-    btn.disabled = false;
-    btn.classList.add('ready');
+// ===== AVISO DE PRIVACIDAD CON COUNTDOWN =====
+document.body.style.overflow = 'hidden';
+
+let countdownVal = 10;
+const countdownEl = document.getElementById('countdown');
+const btnAceptar  = document.getElementById('btn-aceptar');
+const chkAcepto   = document.getElementById('chk-acepto');
+
+const timer = setInterval(()=>{
+  countdownVal--;
+  if(countdownVal > 0){
+    countdownEl.textContent = '(' + countdownVal + ')';
   } else {
-    btn.disabled = true;
-    btn.classList.remove('ready');
+    clearInterval(timer);
+    countdownEl.textContent = '';
+    // Auto-acepta y cierra
+    chkAcepto.checked = true;
+    btnAceptar.disabled = false;
+    btnAceptar.classList.add('ready');
+    cerrarAviso();
+  }
+}, 1000);
+
+function toggleAceptar(){
+  if(chkAcepto.checked){
+    btnAceptar.disabled = false;
+    btnAceptar.classList.add('ready');
+  } else {
+    btnAceptar.disabled = true;
+    btnAceptar.classList.remove('ready');
   }
 }
 
 function cerrarAviso(){
-  if(!document.getElementById('chk-acepto').checked) return;
+  if(!chkAcepto.checked) return;
+  clearInterval(timer);
   const overlay = document.getElementById('privacy-overlay');
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity .3s';
-  setTimeout(()=>{ overlay.style.display = 'none'; }, 300);
-}
-
-// Bloquear scroll del body mientras el modal está abierto
-document.body.style.overflow = 'hidden';
-document.getElementById('privacy-overlay').addEventListener('transitionend', function(){
-  if(this.style.display === 'none'){
+  setTimeout(()=>{
+    overlay.style.display = 'none';
     document.body.style.overflow = '';
-  }
-});
+  }, 300);
+}
 
 // ===== PORTAL =====
 function fmt(n){
@@ -650,7 +691,43 @@ async function consultar(){
   }
 
   currentData = data;
-  mostrarCuenta(data, !isSupabaseConfigured());
+  // Paso intermedio: verificar últimos 4 dígitos
+  document.getElementById('step-login').style.display  = 'none';
+  document.getElementById('step-verify').style.display = 'block';
+  document.getElementById('digits-input').value = '';
+  document.getElementById('error-verify').style.display = 'none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function verificar(){
+  const digitos = document.getElementById('digits-input').value.trim();
+  const errEl   = document.getElementById('error-verify');
+  errEl.style.display = 'none';
+
+  if(digitos.length !== 4){
+    errEl.textContent = 'Ingresa exactamente 4 dígitos.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Comparar con terminacion_cuenta (solo los últimos 4 dígitos numéricos)
+  const terminacion = (currentData.terminacion_cuenta || '').replace(/\D/g,'').slice(-4);
+  if(digitos !== terminacion){
+    errEl.textContent = 'Dígitos incorrectos. Verifica tu número de cuenta.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('step-verify').style.display = 'none';
+  mostrarCuenta(currentData, !isSupabaseConfigured());
+}
+
+function regresarLogin(){
+  document.getElementById('step-verify').style.display = 'none';
+  document.getElementById('step-login').style.display  = 'block';
+  document.getElementById('error-msg').style.display   = 'none';
+  document.getElementById('rfc-input').value = '';
+  currentData = null;
 }
 
 function mostrarCuenta(d, isDemo){
@@ -723,10 +800,17 @@ function regresar(){
   opcionSeleccionada = null;
 }
 
-// Enter key en el input
+// Enter key en RFC
 document.getElementById('rfc-input').addEventListener('keydown', e=>{
   if(e.key === 'Enter') consultar();
   const allowed = /^[A-Za-z0-9]$/;
+  if(e.key.length === 1 && !allowed.test(e.key)) e.preventDefault();
+});
+
+// Enter key en dígitos
+document.getElementById('digits-input').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') verificar();
+  const allowed = /^[0-9]$/;
   if(e.key.length === 1 && !allowed.test(e.key)) e.preventDefault();
 });
 </script>
