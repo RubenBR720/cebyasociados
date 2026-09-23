@@ -279,6 +279,10 @@ header{
   color:var(--gold-l);margin-bottom:4px;
 }
 .opt-titulo{font-weight:700;font-size:.95rem;margin-bottom:6px;padding-right:28px}
+.opt-total-lbl{
+  font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:2px;margin-top:10px;
+}
 .opt-monto{
   font-family:'Playfair Display',serif;
   font-size:1.4rem;font-weight:700;color:var(--gold-l);
@@ -556,6 +560,7 @@ footer a{color:var(--gold-l);text-decoration:none}
     <div class="opt-radio"></div>
     <div class="opt-num">Opción 01</div>
     <div class="opt-titulo" id="o1-titulo">—</div>
+    <div class="opt-total-lbl">Total a pagar</div>
     <div class="opt-monto" id="o1-monto">—</div>
     <div class="opt-desc" id="o1-desc"></div>
   </div>
@@ -564,6 +569,7 @@ footer a{color:var(--gold-l);text-decoration:none}
     <div class="opt-radio"></div>
     <div class="opt-num">Opción 02</div>
     <div class="opt-titulo" id="o2-titulo">—</div>
+    <div class="opt-total-lbl">Total a pagar</div>
     <div class="opt-monto" id="o2-monto">—</div>
     <div class="opt-desc" id="o2-desc"></div>
   </div>
@@ -572,6 +578,7 @@ footer a{color:var(--gold-l);text-decoration:none}
     <div class="opt-radio"></div>
     <div class="opt-num">Opción 03</div>
     <div class="opt-titulo" id="o3-titulo">—</div>
+    <div class="opt-total-lbl">Total a pagar</div>
     <div class="opt-monto" id="o3-monto">—</div>
     <div class="opt-desc" id="o3-desc"></div>
   </div>
@@ -851,16 +858,16 @@ function calcularOpciones(saldo){
 
   return {
     opcion1_titulo: 'Pago único — 70% de descuento',
-    opcion1_monto:  montoUnico,
-    opcion1_desc:   `Un solo pago de ${fmt(montoUnico)}. Ahorras ${fmt(saldo - montoUnico)} sobre tu saldo total.`,
+    opcion1_monto:  montoUnico,                    // TOTAL (1 pago)
+    opcion1_desc:   `1 pago de ${fmt(montoUnico)}. Ahorras ${fmt(saldo - montoUnico)} sobre tu saldo original de ${fmt(saldo)}.`,
 
     opcion2_titulo: 'Dos pagos — 60% de descuento',
-    opcion2_monto:  montoCadaPago,
-    opcion2_desc:   `Primer pago en ${m1} y segundo en ${m2}, ${fmt(montoCadaPago)} cada uno. Ahorras ${fmt(saldo - saldoDesc60)}.`,
+    opcion2_monto:  saldoDesc60,                   // TOTAL (2 pagos sumados)
+    opcion2_desc:   `2 pagos de ${fmt(montoCadaPago)} c/u — ${m1} y ${m2}. Ahorras ${fmt(saldo - saldoDesc60)} sobre tu saldo original de ${fmt(saldo)}.`,
 
     opcion3_titulo: `Plan ${meses} meses sin descuento`,
-    opcion3_monto:  montoPorMes,
-    opcion3_desc:   `${meses} pagos mensuales iguales de ${fmt(montoPorMes)} sobre el saldo total sin intereses adicionales.`
+    opcion3_monto:  saldo,                         // TOTAL (saldo completo)
+    opcion3_desc:   `${meses} pagos de ${fmt(montoPorMes)} c/u. Sin descuento; pagas el saldo total en partes iguales.`
   };
 }
 
