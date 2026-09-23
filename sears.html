@@ -436,8 +436,10 @@ header{
 #pay-link-wrap{
   margin-top:12px;
   display:none;
+  flex-direction:column;
+  gap:10px;
 }
-#pay-link-wrap.visible{display:block}
+#pay-link-wrap.visible{display:flex}
 .btn-pay{
   display:flex;align-items:center;justify-content:center;gap:10px;
   width:100%;
@@ -784,20 +786,26 @@ footer a{color:var(--gold-l);text-decoration:none}
     <p class="wa-note">Un asesor confirmará tu convenio y te dará los detalles de pago.</p>
   </div>
 
-  <!-- Link de pago directo Sears (se activa cuando SEARS_PAYMENT_URL esté configurado) -->
+  <!-- Links de pago directo (se activan tras la firma) -->
   <div id="pay-link-wrap">
-    <a id="pay-link" class="btn-pay" href="#" target="_blank" rel="noopener">
+    <a id="pay-link-sears" class="btn-pay" href="https://www.sears.com.mx" target="_blank" rel="noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
       </svg>
-      Pagar en línea — Portal Sears / Sanborns
+      Pagar en línea — Portal Sears
+    </a>
+    <a id="pay-link-sanborns" class="btn-pay" href="https://credito.sanborns.com.mx" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+      </svg>
+      Pagar en línea — Portal Sanborns
     </a>
   </div>
 
   <!-- Nota de pago -->
   <div class="pay-note">
     <strong>¿Cómo realizar tu pago?</strong><br>
-    Puedes pagar en línea en <strong>credito.sanborns.com.mx</strong>, en cualquier tienda <strong>Sears</strong> o en la <strong>aplicación Sears</strong>. Tu asesor CEB te confirmará los detalles exactos al formalizar el convenio.
+    Puedes pagar en línea en <strong>www.sears.com.mx</strong> o en <strong>credito.sanborns.com.mx</strong>, en cualquier tienda <strong>Sears</strong> o en la <strong>aplicación Sears</strong>. Tu asesor CEB te confirmará los detalles exactos al formalizar el convenio.
   </div>
 
   <!-- Fecha límite -->
@@ -828,7 +836,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_MnOP8yjFqEiuEnrynkVm-g_QHdxm8V3';
 const WA_NUMBER     = '525597675856';
 
 // Portal de pagos Sears / Sanborns
-const SEARS_PAYMENT_URL = 'https://credito.sanborns.com.mx';
+// Portales de pago: www.sears.com.mx y credito.sanborns.com.mx
 
 // ============================================================
 //  MODO DEMO
@@ -1270,9 +1278,8 @@ async function firmar(){
   const wrap = document.getElementById('wa-btn-wrap');
   wrap.classList.add('visible');
 
-  // Mostrar link de pago directo si está configurado
-  if(SEARS_PAYMENT_URL){
-    document.getElementById('pay-link').href = SEARS_PAYMENT_URL;
+  // Mostrar botones de pago directo
+  {
     document.getElementById('pay-link-wrap').classList.add('visible');
   }
 
