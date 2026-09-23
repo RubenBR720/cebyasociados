@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Cartera Sears — CEB</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --navy:   #060E22;
+  --navy2:  #0D1B3E;
+  --navy3:  #122455;
+  --gold:   #C9991A;
+  --gold-l: #E8B84B;
+  --gold-d: #A07A10;
+  --text:   #F0F2F8;
+  --text2:  #9AA6C4;
+  --border: rgba(201,153,26,.18);
+  --card:   rgba(18,36,85,.55);
+  --ok:     #22C55E;
+  --ok-bg:  rgba(34,197,94,.12);
+  --warn:   #F59E0B;
+  --warn-bg:rgba(245,158,11,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--navy);
+  color:var(--text);
+  min-height:100vh;
+}
+
+/* ===== PIN OVERLAY ===== */
+#pin-overlay{
+  position:fixed;inset:0;
+  background:rgba(6,14,34,.99);
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.pin-box{
+  width:100%;max-width:360px;
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:36px 28px;
+  text-align:center;
+}
+.pin-logo{
+  width:48px;height:48px;
+  background:var(--gold);
+  font-family:'Playfair Display',serif;
+  font-weight:700;font-size:1.5rem;
+  color:var(--navy);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.pin-box h2{
+  font-family:'Playfair Display',serif;
+  font-size:1.2rem;font-weight:700;
+  margin-bottom:6px;
+}
+.pin-box p{
+  font-size:.8rem;color:var(--text2);
+  margin-bottom:24px;line-height:1.5;
+}
+.pin-input{
+  width:100%;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid var(--border);
+  color:var(--text);
+  font-size:1.8rem;font-weight:700;
+  letter-spacing:.5em;
+  padding:14px;
+  text-align:center;
+  outline:none;
+  transition:border-color .2s;
+  margin-bottom:12px;
+}
+.pin-input:focus{border-color:var(--gold)}
+.pin-btn{
+  width:100%;
+  background:var(--gold);color:var(--navy);
+  font-weight:700;font-size:.95rem;
+  padding:13px;
+  border:none;cursor:pointer;
+  transition:background .2s;
+}
+.pin-btn:hover{background:var(--gold-l)}
+.pin-error{
+  margin-top:10px;
+  font-size:.8rem;color:#FF6B6B;
+  display:none;
+}
+
+/* ===== DASHBOARD LAYOUT ===== */
+#dashboard{display:none}
+
+.top-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 24px;
+  background:var(--navy2);
+  border-bottom:1px solid var(--border);
+  gap:12px;
+  flex-wrap:wrap;
+}
+.top-bar-left{display:flex;align-items:center;gap:12px}
+.logo-mark{
+  width:38px;height:38px;
+  background:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;
+  font-weight:900;font-size:1.2rem;
+  color:var(--navy);flex-shrink:0;
+}
+.top-title{
+  font-weight:700;font-size:.95rem;
+  line-height:1.2;
+}
+.top-sub{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-l)}
+
+.top-bar-right{
+  display:flex;align-items:center;gap:10px;
+}
+.live-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--ok);
+  box-shadow:0 0 6px var(--ok);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-label{font-size:.7rem;color:var(--text2);letter-spacing:.05em}
+#last-update{font-size:.7rem;color:var(--text2)}
+.btn-refresh{
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);
+  color:var(--text2);
+  font-size:.75rem;
+  padding:7px 14px;
+  cursor:pointer;
+  transition:border-color .2s,color .2s;
+  font-family:inherit;
+}
+.btn-refresh:hover{border-color:var(--gold);color:var(--gold-l)}
+.btn-refresh:disabled{opacity:.4;cursor:not-allowed}
+
+.dash-body{
+  padding:24px;
+  max-width:1100px;
+  margin:0 auto;
+}
+
+/* ===== METRIC CARDS ===== */
+.metrics-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+  margin-bottom:28px;
+}
+.metric-card{
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:20px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.metric-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;
+  height:3px;
+  background:var(--gold);
+  opacity:.5;
+}
+.metric-card.green::before{background:var(--ok);}
+.metric-card.amber::before{background:var(--warn);}
+.m-label{
+  font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:8px;
+}
+.m-value{
+  font-family:'Playfair Display',serif;
+  font-size:2rem;font-weight:700;
+  color:var(--gold-l);
+  line-height:1;
+  margin-bottom:4px;
+}
+.metric-card.green .m-value{color:#4ADE80}
+.metric-card.amber .m-value{color:var(--warn)}
+.m-sub{font-size:.72rem;color:var(--text2);line-height:1.4}
+
+/* ===== PROGRESS BAR ===== */
+.progress-section{
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:20px;
+  margin-bottom:28px;
+}
+.progress-header{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:12px;
+}
+.progress-title{
+  font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold-l);
+}
+.progress-pct{
+  font-family:'Playfair Display',serif;
+  font-size:1.4rem;font-weight:700;color:var(--text);
+}
+.progress-bar-bg{
+  height:10px;
+  background:rgba(255,255,255,.06);
+  border-radius:2px;
+  overflow:hidden;
+  margin-bottom:8px;
+}
+.progress-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--gold-d),var(--gold-l));
+  border-radius:2px;
+  transition:width .8s ease;
+  width:0;
+}
+.progress-meta{
+  display:flex;gap:20px;
+  font-size:.72rem;color:var(--text2);
+  flex-wrap:wrap;
+}
+.progress-meta span strong{color:var(--text);margin-left:4px}
+
+/* ===== TWO COLS LAYOUT ===== */
+.two-col{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:28px;
+}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+
+/* ===== PANEL ===== */
+.panel{
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:20px;
+}
+.panel-title{
+  font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:16px;
+}
+
+/* ===== OPCION BARS ===== */
+.opt-bar-row{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:12px;
+}
+.opt-bar-label{
+  width:80px;font-size:.78rem;color:var(--text2);flex-shrink:0;
+  white-space:nowrap;
+}
+.opt-bar-wrap{flex:1;height:20px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.opt-bar-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.opt-bar-val{width:48px;font-size:.78rem;font-weight:600;text-align:right;flex-shrink:0}
+
+/* ===== TABLA DE ACTIVIDAD ===== */
+.activity-table{
+  width:100%;border-collapse:collapse;
+  font-size:.78rem;
+}
+.activity-table th{
+  font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text2);
+  padding:0 10px 10px 0;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+  font-weight:400;
+}
+.activity-table td{
+  padding:9px 10px 9px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  color:var(--text);
+  vertical-align:top;
+}
+.activity-table td:last-child{text-align:right;padding-right:0}
+.status-chip{
+  display:inline-block;
+  padding:3px 8px;
+  font-size:.65rem;letter-spacing:.06em;text-transform:uppercase;
+  font-weight:600;border-radius:2px;
+  white-space:nowrap;
+}
+.chip-firmado{background:rgba(34,197,94,.15);color:#4ADE80}
+.chip-solicitado{background:rgba(245,158,11,.15);color:var(--warn)}
+.chip-consultado{background:rgba(154,166,196,.12);color:var(--text2)}
+
+/* ===== SALDO STATS ===== */
+.saldo-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:.82rem;
+}
+.saldo-row:last-child{border-bottom:none}
+.saldo-lbl{color:var(--text2)}
+.saldo-val{
+  font-family:'Playfair Display',serif;
+  font-size:1.1rem;font-weight:700;color:var(--gold-l);
+}
+.saldo-val.ok{color:#4ADE80}
+
+/* ===== LOADING STATE ===== */
+.skeleton{
+  background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.04) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+  border-radius:2px;height:2rem;width:80%;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ===== EMPTY STATE ===== */
+.empty{
+  text-align:center;padding:28px 0;
+  font-size:.82rem;color:var(--text2);
+}
+
+/* ===== FOOTER ===== */
+.dash-footer{
+  text-align:center;
+  font-size:.68rem;color:var(--text2);
+  padding:20px;
+  border-top:1px solid var(--border);
+  margin-top:12px;
+}
+
+/* ===== ERROR BANNER ===== */
+.error-banner{
+  background:rgba(255,107,107,.1);
+  border:1px solid rgba(255,107,107,.3);
+  color:#FF6B6B;
+  padding:12px 18px;
+  font-size:.8rem;
+  margin-bottom:20px;
+  display:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== PIN OVERLAY ===== -->
+<div id="pin-overlay">
+  <div class="pin-box">
+    <div class="pin-logo">B</div>
+    <h2>Panel de Cartera</h2>
+    <p>Acceso exclusivo para el equipo CEB.<br>Ingresa tu PIN para continuar.</p>
+    <input class="pin-input" id="pin-input" type="password"
+      maxlength="6" inputmode="numeric" autocomplete="off"
+      placeholder="••••">
+    <button class="pin-btn" onclick="validarPin()">Acceder</button>
+    <div class="pin-error" id="pin-error">PIN incorrecto. Intenta de nuevo.</div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="logo-mark">B</div>
+      <div>
+        <div class="top-title">Panel · Cartera Sears</div>
+        <div class="top-sub">Cobranza Especializada Bravo &amp; Asociados</div>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <div class="live-dot"></div>
+      <span class="live-label">Tiempo real</span>
+      <span id="last-update">—</span>
+      <button class="btn-refresh" id="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <div class="error-banner" id="error-banner"></div>
+
+    <!-- MÉTRICAS PRINCIPALES -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="m-label">Total en cartera</div>
+        <div class="m-value" id="m-total">—</div>
+        <div class="m-sub">deudores activos</div>
+      </div>
+      <div class="metric-card amber">
+        <div class="m-label">Consultaron portal</div>
+        <div class="m-value" id="m-consultados">—</div>
+        <div class="m-sub" id="m-consultados-pct">de la cartera</div>
+      </div>
+      <div class="metric-card green">
+        <div class="m-label">Convenios firmados</div>
+        <div class="m-value" id="m-firmados">—</div>
+        <div class="m-sub" id="m-firmados-pct">con firma digital</div>
+      </div>
+      <div class="metric-card green">
+        <div class="m-label">Total convenios</div>
+        <div class="m-value" id="m-convenios">—</div>
+        <div class="m-sub">firmados + en proceso</div>
+      </div>
+    </div>
+
+    <!-- BARRA DE PROGRESO GENERAL -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span class="progress-title">Porcentaje de gestión exitosa</span>
+        <span class="progress-pct" id="prog-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="prog-bar"></div>
+      </div>
+      <div class="progress-meta">
+        <span>Consultaron: <strong id="pm-consultados">—</strong></span>
+        <span>Firmaron: <strong id="pm-firmados">—</strong></span>
+        <span>Sin gestión: <strong id="pm-sin">—</strong></span>
+      </div>
+    </div>
+
+    <!-- DOS COLUMNAS -->
+    <div class="two-col">
+
+      <!-- DISTRIBUCIÓN POR OPCIÓN -->
+      <div class="panel">
+        <div class="panel-title">Distribución por opción elegida</div>
+
+        <div class="opt-bar-row">
+          <span class="opt-bar-label">Opción 1</span>
+          <div class="opt-bar-wrap">
+            <div class="opt-bar-fill" id="bar-opt1" style="background:#C9991A;width:0%"></div>
+          </div>
+          <span class="opt-bar-val" id="val-opt1">—</span>
+        </div>
+        <div style="font-size:.68rem;color:var(--text2);margin:-6px 0 10px 90px">Pago único 70% dto.</div>
+
+        <div class="opt-bar-row">
+          <span class="opt-bar-label">Opción 2</span>
+          <div class="opt-bar-wrap">
+            <div class="opt-bar-fill" id="bar-opt2" style="background:#4ADE80;width:0%"></div>
+          </div>
+          <span class="opt-bar-val" id="val-opt2">—</span>
+        </div>
+        <div style="font-size:.68rem;color:var(--text2);margin:-6px 0 10px 90px">2 pagos 60% dto.</div>
+
+        <div class="opt-bar-row">
+          <span class="opt-bar-label">Opción 3</span>
+          <div class="opt-bar-wrap">
+            <div class="opt-bar-fill" id="bar-opt3" style="background:#60A5FA;width:0%"></div>
+          </div>
+          <span class="opt-bar-val" id="val-opt3">—</span>
+        </div>
+        <div style="font-size:.68rem;color:var(--text2);margin:-6px 0 0 90px">Plan meses sin dto.</div>
+      </div>
+
+      <!-- RESUMEN DE SALDOS -->
+      <div class="panel">
+        <div class="panel-title">Resumen de saldos</div>
+
+        <div class="saldo-row">
+          <span class="saldo-lbl">Saldo total cartera</span>
+          <span class="saldo-val" id="s-total">—</span>
+        </div>
+        <div class="saldo-row">
+          <span class="saldo-lbl">Saldo gestionado (firmados)</span>
+          <span class="saldo-val" id="s-gestionado">—</span>
+        </div>
+        <div class="saldo-row">
+          <span class="saldo-lbl">Recuperación estimada</span>
+          <span class="saldo-val ok" id="s-recuperacion">—</span>
+        </div>
+        <div class="saldo-row">
+          <span class="saldo-lbl" style="font-size:.7rem">* Basado en la opción elegida por cada deudor firmado.</span>
+          <span></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ÚLTIMAS ACTIVIDADES -->
+    <div class="panel" style="margin-bottom:28px">
+      <div class="panel-title">Últimas 25 gestiones registradas</div>
+      <div id="activity-wrap">
+        <div class="empty">Cargando...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dash-footer">
+    Cobranza Especializada Bravo &amp; Asociados S.A.S. de C.V. · RFC CEB2501307R0 ·
+    Panel interno — acceso restringido
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIGURACIÓN
+// ============================================================
+const SUPABASE_URL      = 'https://grqhvetlfkeqinjnbzhx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_MnOP8yjFqEiuEnrynkVm-g_QHdxm8V3';
+const DASHBOARD_PIN     = '2526';           // Cambia este PIN cuando quieras
+const AUTO_REFRESH_MS   = 60 * 1000;       // Actualización automática cada 60 seg
+
+// ============================================================
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let refreshTimer = null;
+
+// ===== PIN =====
+document.getElementById('pin-input').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') validarPin();
+});
+
+function validarPin(){
+  const val = document.getElementById('pin-input').value.trim();
+  if(val === DASHBOARD_PIN){
+    document.getElementById('pin-overlay').style.display = 'none';
+    document.getElementById('dashboard').style.display   = 'block';
+    cargarDatos();
+    refreshTimer = setInterval(cargarDatos, AUTO_REFRESH_MS);
+  } else {
+    const errEl = document.getElementById('pin-error');
+    errEl.style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+    setTimeout(()=>{ errEl.style.display='none'; }, 2500);
+  }
+}
+
+// ===== FORMATO MONEDA =====
+function fmt(n){
+  return '$' + Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtN(n){
+  return Number(n||0).toLocaleString('es-MX');
+}
+function pct(a,b){
+  if(!b) return '0%';
+  return (a/b*100).toFixed(1)+'%';
+}
+
+// ===== RECOVERY CALC (misma lógica que el portal) =====
+function calcRecovery(saldo, opcion){
+  if(opcion === 1) return saldo * 0.30;
+  if(opcion === 2) return saldo * 0.40;
+  if(opcion === 3) return saldo * 1.00;
+  return 0;
+}
+
+// ===== CARGAR DATOS =====
+async function cargarDatos(){
+  const btn = document.getElementById('btn-refresh');
+  btn.disabled = true;
+  btn.textContent = 'Actualizando...';
+  document.getElementById('error-banner').style.display = 'none';
+
+  try {
+    // 1. Total cartera
+    const { count: total, error: e1 } = await sb
+      .from('deudores')
+      .select('*', { count: 'exact', head: true });
+    if(e1) throw e1;
+
+    // 2. Todos los que tienen status (consultados o más)
+    const { count: conStatus, error: e2 } = await sb
+      .from('deudores')
+      .select('*', { count: 'exact', head: true })
+      .not('status', 'is', null);
+    if(e2) throw e2;
+
+    // 3. Firmados
+    const { count: firmados, error: e3 } = await sb
+      .from('deudores')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'firmado');
+    if(e3) throw e3;
+
+    // 4. Convenios totales (firmado + solicitado)
+    const { count: convenios, error: e4 } = await sb
+      .from('deudores')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['firmado', 'convenio_solicitado']);
+    if(e4) throw e4;
+
+    // 5. Distribución por opción
+    const { data: porOpcion, error: e5 } = await sb
+      .from('deudores')
+      .select('opcion_elegida')
+      .not('opcion_elegida', 'is', null);
+    if(e5) throw e5;
+
+    // 6. Saldos — total cartera
+    const { data: saldoTodos, error: e6 } = await sb
+      .from('deudores')
+      .select('saldo_total');
+    if(e6) throw e6;
+
+    // 7. Saldos + opcion de los firmados (para estimar recuperación)
+    const { data: firmadosData, error: e7 } = await sb
+      .from('deudores')
+      .select('saldo_total, opcion_elegida')
+      .eq('status', 'firmado');
+    if(e7) throw e7;
+
+    // 8. Últimas actividades
+    const { data: actividad, error: e8 } = await sb
+      .from('deudores')
+      .select('nombre, rfc, status, opcion_elegida, fecha_solicitud, saldo_total')
+      .not('status', 'is', null)
+      .order('fecha_solicitud', { ascending: false })
+      .limit(25);
+    if(e8) throw e8;
+
+    // ===== PROCESAR =====
+    const totalN       = total || 0;
+    const consultadosN = conStatus || 0;
+    const firmadosN    = firmados || 0;
+    const conveniosN   = convenios || 0;
+
+    // Distribución por opción
+    const opt1 = porOpcion.filter(r=>r.opcion_elegida===1).length;
+    const opt2 = porOpcion.filter(r=>r.opcion_elegida===2).length;
+    const opt3 = porOpcion.filter(r=>r.opcion_elegida===3).length;
+    const maxOpt = Math.max(opt1, opt2, opt3, 1);
+
+    // Saldo total
+    const saldoTotal = saldoTodos.reduce((s,r)=>s+Number(r.saldo_total||0),0);
+
+    // Saldo gestionado y recuperación estimada
+    const saldoGestionado = firmadosData.reduce((s,r)=>s+Number(r.saldo_total||0),0);
+    const recuperacion    = firmadosData.reduce((s,r)=>s+calcRecovery(Number(r.saldo_total||0), r.opcion_elegida),0);
+
+    // ===== ACTUALIZAR DOM =====
+    // Métricas
+    document.getElementById('m-total').textContent        = fmtN(totalN);
+    document.getElementById('m-consultados').textContent  = fmtN(consultadosN);
+    document.getElementById('m-firmados').textContent     = fmtN(firmadosN);
+    document.getElementById('m-convenios').textContent    = fmtN(conveniosN);
+
+    document.getElementById('m-consultados-pct').textContent = pct(consultadosN,totalN) + ' del total';
+    document.getElementById('m-firmados-pct').textContent    = pct(firmadosN,totalN) + ' del total';
+
+    // Barra de progreso (basado en convenios / total)
+    const pctNum = totalN ? (conveniosN/totalN*100) : 0;
+    document.getElementById('prog-pct').textContent    = pctNum.toFixed(1)+'%';
+    document.getElementById('prog-bar').style.width    = Math.min(pctNum,100)+'%';
+    document.getElementById('pm-consultados').textContent = fmtN(consultadosN);
+    document.getElementById('pm-firmados').textContent    = fmtN(firmadosN);
+    document.getElementById('pm-sin').textContent         = fmtN(totalN-consultadosN);
+
+    // Opciones
+    document.getElementById('val-opt1').textContent = fmtN(opt1);
+    document.getElementById('val-opt2').textContent = fmtN(opt2);
+    document.getElementById('val-opt3').textContent = fmtN(opt3);
+    document.getElementById('bar-opt1').style.width = (opt1/maxOpt*100)+'%';
+    document.getElementById('bar-opt2').style.width = (opt2/maxOpt*100)+'%';
+    document.getElementById('bar-opt3').style.width = (opt3/maxOpt*100)+'%';
+
+    // Saldos
+    document.getElementById('s-total').textContent       = fmt(saldoTotal);
+    document.getElementById('s-gestionado').textContent  = fmt(saldoGestionado);
+    document.getElementById('s-recuperacion').textContent= fmt(recuperacion);
+
+    // Tabla de actividad
+    renderActividad(actividad || []);
+
+    // Timestamp
+    const now = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('last-update').textContent = `Actualizado: ${now}`;
+
+  } catch(err){
+    const banner = document.getElementById('error-banner');
+    banner.textContent = `Error al cargar datos: ${err.message || JSON.stringify(err)}`;
+    banner.style.display = 'block';
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↻ Actualizar';
+}
+
+function renderActividad(rows){
+  const wrap = document.getElementById('activity-wrap');
+  if(!rows.length){
+    wrap.innerHTML = '<div class="empty">Sin actividad registrada aún.</div>';
+    return;
+  }
+
+  const statusLabel = {
+    firmado:             '<span class="status-chip chip-firmado">Firmado</span>',
+    convenio_solicitado: '<span class="status-chip chip-solicitado">En proceso</span>',
+    consultado:          '<span class="status-chip chip-consultado">Consultó</span>',
+  };
+
+  const optLabel = {1:'Opción 1 — Único',2:'Opción 2 — 2 pagos',3:'Opción 3 — Meses'};
+
+  const rows_html = rows.map(r=>{
+    const fecha = r.fecha_solicitud
+      ? new Date(r.fecha_solicitud).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    const chip  = statusLabel[r.status] || `<span class="status-chip chip-consultado">${r.status}</span>`;
+    const opt   = r.opcion_elegida ? (optLabel[r.opcion_elegida]||'Opt '+r.opcion_elegida) : '—';
+    const saldo = fmt(r.saldo_total);
+    return `<tr>
+      <td><strong>${r.nombre||'—'}</strong><br><span style="color:var(--text2);font-size:.7rem">${r.rfc||''}</span></td>
+      <td>${chip}</td>
+      <td style="color:var(--text2)">${opt}</td>
+      <td>${saldo}</td>
+      <td style="color:var(--text2)">${fecha}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table class="activity-table">
+    <thead>
+      <tr>
+        <th>Deudor</th>
+        <th>Estado</th>
+        <th>Opción</th>
+        <th>Saldo</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>${rows_html}</tbody>
+  </table>`;
+}
+</script>
+</body>
+</html>
