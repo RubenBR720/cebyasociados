@@ -1,4 +1,4 @@
-  <!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -329,6 +329,55 @@ header{
 }
 .btn-back:hover{color:var(--text)}
 
+/* ===== FECHA LÍMITE ===== */
+.expiry-badge{
+  margin-top:20px;
+  padding:10px 16px;
+  background:rgba(201,153,26,.1);
+  border:1px solid rgba(201,153,26,.3);
+  border-radius:4px;
+  font-size:.78rem;
+  color:var(--gold-l);
+  text-align:center;
+  display:none;
+}
+.expiry-badge.visible{display:block}
+
+/* ===== BOTÓN IMPRIMIR ===== */
+.btn-print{
+  display:block;width:100%;
+  margin-top:14px;padding:12px 20px;
+  background:none;
+  border:1px solid var(--border);
+  color:var(--text2);
+  font-size:.82rem;font-family:inherit;
+  cursor:pointer;
+  transition:border-color .2s,color .2s;
+  text-align:center;
+}
+.btn-print:hover{border-color:var(--gold);color:var(--gold-l)}
+
+/* ===== PRINT ===== */
+@media print{
+  #privacy-overlay,header,.btn-back,.btn-print,.btn-wa,.wa-note,
+  #step-login,#step-verify,.demo-badge,footer{display:none!important}
+  body{background:#fff!important;color:#111!important;padding:0!important}
+  .card{border:1px solid #ccc!important;box-shadow:none!important;background:#fff!important;max-width:100%!important}
+  .info-cell,.account-badge{background:#f5f5f5!important;border-color:#ddd!important}
+  .opt-card{border:1px solid #ccc!important;background:#fff!important}
+  .opt-card.selected{border-color:#333!important;background:#f0f0f0!important}
+  .expiry-badge{background:#fff8e1!important;border-color:#f0c040!important;color:#6b4c00!important}
+  :root{--text:#111;--text2:#444;--gold:#8a6000;--gold-l:#a07000}
+  .lbl{color:#555!important}
+  .val{color:#111!important}
+  .print-header{display:block!important}
+}
+.print-header{
+  display:none;
+  text-align:center;margin-bottom:16px;
+  font-size:.75rem;color:#666;
+}
+
 /* ===== LOADING ===== */
 .spinner{
   display:inline-block;
@@ -472,6 +521,7 @@ footer a{color:var(--gold-l);text-decoration:none}
 
 <!-- STEP 2: CUENTA Y OPCIONES -->
 <div class="card" id="step-cuenta">
+  <div class="print-header">Cobranza Especializada Bravo &amp; Asociados S.A.S. de C.V. · RFC CEB2501307R0<br>Portal Sears · cebyasociados.com</div>
   <div class="demo-badge" id="demo-badge">⚠️ MODO DEMO — Datos de ejemplo</div>
 
   <!-- Info del deudor -->
@@ -543,6 +593,15 @@ footer a{color:var(--gold-l);text-decoration:none}
     El pago de tu adeudo se realiza directamente en cualquier tienda <strong>Sears</strong> o a través de la <strong>aplicación Sears</strong>. Al confirmar tu convenio, te proporcionaremos los detalles exactos.
   </div>
 
+  <!-- Fecha límite -->
+  <div class="expiry-badge" id="expiry-badge"></div>
+
+  <!-- Botón imprimir resumen -->
+  <button class="btn-print" onclick="imprimirResumen()" title="Guardar resumen en PDF">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Guardar resumen (PDF)
+  </button>
+
   <button class="btn-back" onclick="regresar()">← Consultar otro RFC</button>
 </div>
 
@@ -589,6 +648,8 @@ const DEMO_DATA = {
 let supabaseClient = null;
 let currentData = null;
 let opcionSeleccionada = null;
+let intentosVerificacion = 0;
+const MAX_INTENTOS = 3;
 
 function isSupabaseConfigured(){
   return SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY';
@@ -714,6 +775,8 @@ async function consultar(){
 function verificar(){
   const digitos = document.getElementById('digits-input').value.trim();
   const errEl   = document.getElementById('error-verify');
+  const btn     = document.getElementById('btn-verificar');
+  const inp     = document.getElementById('digits-input');
   errEl.style.display = 'none';
 
   if(digitos.length !== 4){
@@ -722,14 +785,26 @@ function verificar(){
     return;
   }
 
-  // Comparar con terminacion_cuenta (solo los últimos 4 dígitos numéricos)
   const terminacion = (currentData.terminacion_cuenta || '').replace(/\D/g,'').slice(-4);
   if(digitos !== terminacion){
-    errEl.textContent = 'Dígitos incorrectos. Verifica tu número de cuenta.';
+    intentosVerificacion++;
+    const restantes = MAX_INTENTOS - intentosVerificacion;
+    if(intentosVerificacion >= MAX_INTENTOS){
+      errEl.innerHTML = `Sesión bloqueada por seguridad. Por favor contacta a un asesor:<br>
+        <a href="https://wa.me/${WA_NUMBER}" target="_blank" style="color:var(--gold-l)">WhatsApp: ${WA_NUMBER}</a>`;
+      errEl.style.display = 'block';
+      btn.disabled = true;
+      inp.disabled = true;
+      return;
+    }
+    errEl.textContent = `Dígitos incorrectos. Te quedan ${restantes} intento${restantes!==1?'s':''}.`;
     errEl.style.display = 'block';
+    inp.value = '';
+    inp.focus();
     return;
   }
 
+  intentosVerificacion = 0;
   document.getElementById('step-verify').style.display = 'none';
   mostrarCuenta(currentData, !isSupabaseConfigured());
 }
@@ -739,22 +814,40 @@ function regresarLogin(){
   document.getElementById('step-login').style.display  = 'block';
   document.getElementById('error-msg').style.display   = 'none';
   document.getElementById('rfc-input').value = '';
+  document.getElementById('btn-verificar').disabled = false;
+  document.getElementById('digits-input').disabled  = false;
+  intentosVerificacion = 0;
   currentData = null;
+}
+
+// ===== FECHA LÍMITE DE OFERTA =====
+function fechaLimiteOferta(){
+  const hoy = new Date();
+  const fin  = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0); // último día del mes actual
+  return fin.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+}
+
+// ===== MESES DINÁMICOS =====
+function mesesActuales(){
+  const nombres = ['enero','febrero','marzo','abril','mayo','junio',
+                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const hoy = new Date();
+  return { m1: nombres[hoy.getMonth()], m2: nombres[(hoy.getMonth()+1)%12] };
 }
 
 // ===== CÁLCULO AUTOMÁTICO DE OPCIONES =====
 function calcularOpciones(saldo){
-  // Plazo según rango de saldo
   let meses;
   if(saldo <= 3000)       meses = 3;
   else if(saldo <= 6000)  meses = 6;
   else if(saldo <= 20000) meses = 8;
   else                    meses = 12;
 
-  const montoUnico     = saldo * 0.30;          // 70% descuento, pago único
-  const saldoDesc60    = saldo * 0.40;          // 60% descuento, 2 pagos
-  const montoCadaPago  = saldoDesc60 / 2;       // 50% en sep + 50% en oct
-  const montoPorMes    = saldo / meses;         // sin descuento, plan mensual
+  const montoUnico    = saldo * 0.30;
+  const saldoDesc60   = saldo * 0.40;
+  const montoCadaPago = saldoDesc60 / 2;
+  const montoPorMes   = saldo / meses;
+  const { m1, m2 }   = mesesActuales();
 
   return {
     opcion1_titulo: 'Pago único — 70% de descuento',
@@ -763,7 +856,7 @@ function calcularOpciones(saldo){
 
     opcion2_titulo: 'Dos pagos — 60% de descuento',
     opcion2_monto:  montoCadaPago,
-    opcion2_desc:   `Primer pago en septiembre y segundo en octubre, ${fmt(montoCadaPago)} cada uno. Ahorras ${fmt(saldo - saldoDesc60)}.`,
+    opcion2_desc:   `Primer pago en ${m1} y segundo en ${m2}, ${fmt(montoCadaPago)} cada uno. Ahorras ${fmt(saldo - saldoDesc60)}.`,
 
     opcion3_titulo: `Plan ${meses} meses sin descuento`,
     opcion3_monto:  montoPorMes,
@@ -807,12 +900,37 @@ function mostrarCuenta(d, isDemo){
     document.getElementById(id).style.display = 'block';
   });
 
+  // Fecha límite de oferta
+  const expEl = document.getElementById('expiry-badge');
+  expEl.textContent = `⏳ Oferta válida hasta el ${fechaLimiteOferta()}`;
+  expEl.classList.add('visible');
+
   document.getElementById('demo-badge').style.display = isDemo ? 'block' : 'none';
   document.getElementById('step-login').style.display  = 'none';
   document.getElementById('step-cuenta').style.display = 'block';
   document.getElementById('wa-btn-wrap').classList.remove('visible');
   opcionSeleccionada = null;
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ===== REGISTRAR SOLICITUD EN SUPABASE =====
+async function registrarSolicitud(opcionNum){
+  if(!isSupabaseConfigured() || !currentData?.rfc) return;
+  try {
+    await supabaseClient
+      .from('deudores')
+      .update({
+        status: 'convenio_solicitado',
+        opcion_elegida: opcionNum,
+        fecha_solicitud: new Date().toISOString()
+      })
+      .eq('rfc', currentData.rfc);
+  } catch(e){ console.warn('No se pudo registrar solicitud:', e); }
+}
+
+// ===== IMPRIMIR RESUMEN =====
+function imprimirResumen(){
+  window.print();
 }
 
 function seleccionarOpcion(n){
@@ -839,6 +957,9 @@ function seleccionarOpcion(n){
   const wrap = document.getElementById('wa-btn-wrap');
   wrap.classList.add('visible');
   wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // Registrar en Supabase que el cliente seleccionó convenio
+  registrarSolicitud(n);
 }
 
 function regresar(){
