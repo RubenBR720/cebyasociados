@@ -23,6 +23,7 @@
   --border: rgba(201,153,26,.18);
   --card:   rgba(18,36,85,.55);
   --wa:     #25D366;
+  --ok:     #22C55E;
 }
 
 /* ===== RESET ===== */
@@ -290,6 +291,124 @@ header{
 }
 .opt-desc{font-size:.78rem;color:var(--text2);line-height:1.4}
 
+/* ===== FIRMA DIGITAL OVERLAY ===== */
+#firma-overlay{
+  position:fixed;inset:0;
+  background:rgba(6,14,34,.98);
+  z-index:500;
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  overflow-y:auto;
+  padding:24px 16px 40px;
+}
+.firma-box{
+  width:100%;max-width:500px;
+  background:var(--navy2);
+  border:1px solid var(--border);
+  padding:28px 24px 24px;
+  margin:auto;
+}
+.firma-eyebrow{
+  font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:8px;
+}
+.firma-title{
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;font-weight:700;
+  margin-bottom:16px;line-height:1.3;
+}
+.firma-convenio{
+  background:rgba(6,14,34,.5);
+  border:1px solid var(--border);
+  padding:16px;
+  margin-bottom:20px;
+  font-size:.8rem;color:var(--text2);line-height:1.7;
+}
+.firma-convenio p{margin-bottom:8px}
+.firma-convenio strong{color:var(--text)}
+.firma-opcion-resumen{
+  background:rgba(201,153,26,.08);
+  border:1px solid rgba(201,153,26,.2);
+  padding:12px;
+  margin:12px 0;
+  display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline;
+}
+.fo-label{
+  font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text2);white-space:nowrap;
+}
+.fo-val{font-weight:600;font-size:.9rem;color:var(--text)}
+.fo-val.fo-big{
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;color:var(--gold-l);
+}
+
+.firma-lbl{
+  font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold-l);margin-bottom:8px;
+}
+.canvas-wrap{
+  border:1.5px solid var(--border);
+  background:rgba(255,255,255,.04);
+  margin-bottom:8px;
+  position:relative;
+  cursor:crosshair;
+  touch-action:none;
+}
+#firma-canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  touch-action:none;
+}
+.canvas-hint{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:.75rem;color:rgba(154,166,196,.3);
+  pointer-events:none;
+  white-space:nowrap;
+  transition:opacity .3s;
+}
+.btn-clear-firma{
+  background:none;border:none;
+  font-size:.72rem;color:var(--text2);
+  cursor:pointer;text-decoration:underline;
+  padding:0;margin-bottom:16px;
+  display:inline-block;
+}
+.btn-clear-firma:hover{color:var(--text)}
+.firma-o{
+  text-align:center;
+  font-size:.72rem;color:var(--text2);
+  margin-bottom:10px;
+  letter-spacing:.05em;
+}
+.firma-nombre-wrap{display:relative}
+.firma-nombre-wrap .field-inp{
+  text-transform:none;
+  letter-spacing:0;
+  font-size:.95rem;
+  font-weight:400;
+}
+.firma-ok-badge{
+  background:rgba(34,197,94,.1);
+  border:1px solid rgba(34,197,94,.3);
+  color:#4ADE80;
+  font-size:.75rem;font-weight:600;
+  padding:10px 14px;
+  margin-bottom:12px;
+  text-align:center;
+  letter-spacing:.02em;
+}
+.firma-footer{
+  margin-top:16px;
+  font-size:.67rem;color:var(--text2);
+  text-align:center;line-height:1.6;
+  border-top:1px solid var(--border);
+  padding-top:12px;
+}
+
 /* ===== WHATSAPP ===== */
 #wa-btn-wrap{
   margin-top:20px;
@@ -312,6 +431,26 @@ header{
   margin-top:10px;font-size:.73rem;color:var(--text2);
   text-align:center;line-height:1.4;
 }
+
+/* ===== PAYMENT LINK ===== */
+#pay-link-wrap{
+  margin-top:12px;
+  display:none;
+}
+#pay-link-wrap.visible{display:block}
+.btn-pay{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;
+  background:rgba(255,255,255,.06);
+  border:1.5px solid var(--gold);
+  color:var(--gold-l);
+  font-weight:700;font-size:.95rem;
+  padding:14px;
+  cursor:pointer;
+  transition:background .2s,color .2s;
+  text-decoration:none;
+}
+.btn-pay:hover{background:rgba(201,153,26,.15);color:var(--gold-l)}
 
 /* ===== PAY NOTE ===== */
 .pay-note{
@@ -363,14 +502,15 @@ header{
 
 /* ===== PRINT ===== */
 @media print{
-  #privacy-overlay,header,.btn-back,.btn-print,.btn-wa,.wa-note,
-  #step-login,#step-verify,.demo-badge,footer{display:none!important}
+  #privacy-overlay,#firma-overlay,header,.btn-back,.btn-print,.btn-wa,.wa-note,
+  #step-login,#step-verify,.demo-badge,footer,#pay-link-wrap{display:none!important}
   body{background:#fff!important;color:#111!important;padding:0!important}
   .card{border:1px solid #ccc!important;box-shadow:none!important;background:#fff!important;max-width:100%!important}
   .info-cell,.account-badge{background:#f5f5f5!important;border-color:#ddd!important}
   .opt-card{border:1px solid #ccc!important;background:#fff!important}
   .opt-card.selected{border-color:#333!important;background:#f0f0f0!important}
   .expiry-badge{background:#fff8e1!important;border-color:#f0c040!important;color:#6b4c00!important}
+  .firma-ok-badge{background:#e8fff0!important;border-color:#4ADE80!important;color:#166534!important}
   :root{--text:#111;--text2:#444;--gold:#8a6000;--gold-l:#a07000}
   .lbl{color:#555!important}
   .val{color:#111!important}
@@ -442,6 +582,9 @@ footer a{color:var(--gold-l);text-decoration:none}
       <h3>Uso de cookies y tecnologías</h3>
       <p>Este portal no utiliza cookies de rastreo ni almacena su información en servidores de terceros distintos a los necesarios para operar la base de datos de convenios (Supabase, Inc.). La consulta no genera un historial permanente en el navegador.</p>
 
+      <h3>Firma electrónica</h3>
+      <p>Al seleccionar una opción de convenio, se le solicitará una <strong>firma electrónica simple</strong> (trazo manuscrito o nombre escrito) que, junto con la marca de tiempo registrada, constituye su manifestación de voluntad conforme al Código de Comercio (Art. 89-bis) y la Ley de Firma Electrónica Avanzada (LFEA).</p>
+
       <h3>Cambios al aviso</h3>
       <p>Cualquier modificación a este Aviso de Privacidad se publicará en <strong>cebyasociados.com</strong>. La fecha de última actualización es <strong>septiembre 2026</strong>.</p>
     </div>
@@ -460,6 +603,50 @@ footer a{color:var(--gold-l);text-decoration:none}
     <p class="privacy-footer-note">
       Al continuar confirmas que eres mayor de edad y titular de la cuenta.<br>
       Registro CONDUSEF · Despacho de Cobranza regulado · RFC CEB2501307R0
+    </p>
+  </div>
+</div>
+
+<!-- ===================== FIRMA DIGITAL OVERLAY ===================== -->
+<div id="firma-overlay" role="dialog" aria-modal="true" aria-labelledby="firma-title">
+  <div class="firma-box">
+    <div class="firma-eyebrow">Paso final — Convenio de Pago</div>
+    <h2 class="firma-title" id="firma-title">Firma tu convenio</h2>
+
+    <!-- Texto del convenio (auto-populated) -->
+    <div class="firma-convenio" id="firma-convenio-text"></div>
+
+    <!-- Canvas de firma -->
+    <p class="firma-lbl" style="margin-bottom:8px">Traza tu firma abajo:</p>
+    <div class="canvas-wrap">
+      <canvas id="firma-canvas" width="460" height="130"></canvas>
+      <span class="canvas-hint" id="canvas-hint">Desliza para firmar</span>
+    </div>
+    <button class="btn-clear-firma" onclick="limpiarFirma()">✕ Limpiar firma</button>
+
+    <!-- Alternativa: nombre escrito -->
+    <p class="firma-o">— o escribe tu nombre completo —</p>
+    <div class="firma-nombre-wrap">
+      <input class="field-inp" id="firma-nombre-escrito" type="text"
+        placeholder="Nombre completo tal como aparece en tu INE"
+        autocomplete="off" autocapitalize="words" style="text-transform:none;letter-spacing:0;font-weight:400">
+    </div>
+
+    <div class="error-msg" id="firma-error" style="margin-top:10px">
+      Dibuja tu firma <strong>o</strong> escribe tu nombre completo para continuar.
+    </div>
+
+    <button class="btn-primary" style="margin-top:16px" id="btn-firmar" onclick="firmar()">
+      ✓ Aceptar y Firmar Convenio
+    </button>
+    <button class="btn-back" onclick="cancelarFirma()" style="display:block;margin-top:12px">
+      ← Cambiar opción de pago
+    </button>
+
+    <p class="firma-footer">
+      Esta firma electrónica simple queda registrada con fecha, hora y RFC del titular,
+      conforme al Código de Comercio (Art. 89-bis) y a la LFEA.<br>
+      Cobranza Especializada Bravo y Asociados S.A.S. de C.V. · RFC CEB2501307R0
     </p>
   </div>
 </div>
@@ -583,21 +770,34 @@ footer a{color:var(--gold-l);text-decoration:none}
     <div class="opt-desc" id="o3-desc"></div>
   </div>
 
+  <!-- Firma OK badge (aparece después de firmar) -->
+  <div id="firma-ok-container"></div>
+
   <!-- WhatsApp -->
   <div id="wa-btn-wrap">
     <a id="wa-link" class="btn-wa" href="#" target="_blank" rel="noopener">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
       </svg>
-      Solicita Convenio
+      Enviar mi convenio por WhatsApp
     </a>
-    <p class="wa-note">Un asesor te contactará para formalizar tu convenio de pago.</p>
+    <p class="wa-note">Un asesor confirmará tu convenio y te dará los detalles de pago.</p>
+  </div>
+
+  <!-- Link de pago directo Sears (se activa cuando SEARS_PAYMENT_URL esté configurado) -->
+  <div id="pay-link-wrap">
+    <a id="pay-link" class="btn-pay" href="#" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+      </svg>
+      Pagar en línea — Portal Sears / Sanborns
+    </a>
   </div>
 
   <!-- Nota de pago -->
   <div class="pay-note">
     <strong>¿Cómo realizar tu pago?</strong><br>
-    El pago de tu adeudo se realiza directamente en cualquier tienda <strong>Sears</strong> o a través de la <strong>aplicación Sears</strong>. Al confirmar tu convenio, te proporcionaremos los detalles exactos.
+    Puedes pagar en línea en <strong>credito.sanborns.com.mx</strong>, en cualquier tienda <strong>Sears</strong> o en la <strong>aplicación Sears</strong>. Tu asesor CEB te confirmará los detalles exactos al formalizar el convenio.
   </div>
 
   <!-- Fecha límite -->
@@ -621,42 +821,38 @@ footer a{color:var(--gold-l);text-decoration:none}
 
 <script>
 // ============================================================
-//  CONFIGURACIÓN SUPABASE
-//  Reemplaza estos valores con los de tu proyecto en Supabase
-//  https://supabase.com → Settings → API
+//  CONFIGURACIÓN
 // ============================================================
-const SUPABASE_URL = 'https://grqhvetlfkeqinjnbzhx.supabase.co';
+const SUPABASE_URL  = 'https://grqhvetlfkeqinjnbzhx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_MnOP8yjFqEiuEnrynkVm-g_QHdxm8V3';
+const WA_NUMBER     = '525597675856';
 
-// WhatsApp de CEB
-const WA_NUMBER = '525597675856';
+// Portal de pagos Sears / Sanborns
+const SEARS_PAYMENT_URL = 'https://credito.sanborns.com.mx';
 
 // ============================================================
-//  MODO DEMO (se activa automáticamente si Supabase no está configurado)
+//  MODO DEMO
 // ============================================================
 const DEMO_RFC = 'BARG900101ABC';
 const DEMO_DATA = {
   rfc: 'BARG900101ABC',
   nombre: 'María García Ramírez',
-  terminacion_cuenta: '****4521',
+  terminacion_cuenta: '4521',
   saldo_total: 12450.00,
-  opcion1_titulo: 'Pago único con 40% de descuento',
-  opcion1_monto: 7470.00,
-  opcion1_desc: 'Liquida tu adeudo en una sola exhibición y obtén el mayor descuento.',
-  opcion2_titulo: 'Plan 3 meses sin intereses',
-  opcion2_monto: 4150.00,
-  opcion2_desc: '3 pagos de $4,150.00. Sin intereses ni cargos adicionales.',
-  opcion3_titulo: 'Plan 6 meses con 20% de descuento',
-  opcion3_monto: 1660.00,
-  opcion3_desc: '6 pagos de $1,660.00. Descuento de 20% aplicado al saldo total.'
+  producto: 'Crédito Sears'
 };
 
 // ============================================================
 let supabaseClient = null;
-let currentData = null;
+let currentData    = null;
 let opcionSeleccionada = null;
 let intentosVerificacion = 0;
 const MAX_INTENTOS = 3;
+
+// Firma canvas state
+let firmaCanvas = null, firmaCtx = null;
+let hasFirmaDibujada = false, isDrawing = false;
+let opcionParaFirmar = null;
 
 function isSupabaseConfigured(){
   return SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY';
@@ -666,9 +862,8 @@ if(isSupabaseConfigured()){
   supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
-// ===== AVISO DE PRIVACIDAD CON COUNTDOWN =====
+// ===== AVISO DE PRIVACIDAD =====
 document.body.style.overflow = 'hidden';
-
 let countdownVal = 10;
 const countdownEl = document.getElementById('countdown');
 const btnAceptar  = document.getElementById('btn-aceptar');
@@ -681,7 +876,6 @@ const timer = setInterval(()=>{
   } else {
     clearInterval(timer);
     countdownEl.textContent = '';
-    // Auto-acepta y cierra
     chkAcepto.checked = true;
     btnAceptar.disabled = false;
     btnAceptar.classList.add('ready');
@@ -705,21 +899,63 @@ function cerrarAviso(){
   const overlay = document.getElementById('privacy-overlay');
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity .3s';
-  setTimeout(()=>{
-    overlay.style.display = 'none';
-    document.body.style.overflow = '';
-  }, 300);
+  setTimeout(()=>{ overlay.style.display = 'none'; document.body.style.overflow = ''; }, 300);
 }
 
-// ===== PORTAL =====
+// ===== FORMATO MONEDA =====
 function fmt(n){
   return '$' + Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+// ===== FECHA LÍMITE DE OFERTA =====
+function fechaLimiteOferta(){
+  const hoy = new Date();
+  const fin  = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  return fin.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+}
+
+// ===== MESES DINÁMICOS =====
+function mesesActuales(){
+  const nombres = ['enero','febrero','marzo','abril','mayo','junio',
+                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const hoy = new Date();
+  return { m1: nombres[hoy.getMonth()], m2: nombres[(hoy.getMonth()+1)%12] };
+}
+
+// ===== CÁLCULO AUTOMÁTICO DE OPCIONES =====
+function calcularOpciones(saldo){
+  let meses;
+  if(saldo <= 3000)       meses = 3;
+  else if(saldo <= 6000)  meses = 6;
+  else if(saldo <= 20000) meses = 8;
+  else                    meses = 12;
+
+  const montoUnico    = saldo * 0.30;
+  const saldoDesc60   = saldo * 0.40;
+  const montoCadaPago = saldoDesc60 / 2;
+  const montoPorMes   = saldo / meses;
+  const { m1, m2 }   = mesesActuales();
+
+  return {
+    opcion1_titulo: 'Pago único — 70% de descuento',
+    opcion1_monto:  montoUnico,
+    opcion1_desc:   `1 pago de ${fmt(montoUnico)}. Ahorras ${fmt(saldo - montoUnico)} sobre tu saldo original de ${fmt(saldo)}.`,
+
+    opcion2_titulo: 'Dos pagos — 60% de descuento',
+    opcion2_monto:  saldoDesc60,
+    opcion2_desc:   `2 pagos de ${fmt(montoCadaPago)} c/u — ${m1} y ${m2}. Ahorras ${fmt(saldo - saldoDesc60)} sobre tu saldo original de ${fmt(saldo)}.`,
+
+    opcion3_titulo: `Plan ${meses} meses sin descuento`,
+    opcion3_monto:  saldo,
+    opcion3_desc:   `${meses} pagos de ${fmt(montoPorMes)} c/u. Sin descuento; pagas el saldo total en partes iguales.`
+  };
+}
+
+// ===== CONSULTAR RFC =====
 async function consultar(){
-  const rfc = document.getElementById('rfc-input').value.trim().toUpperCase();
+  const rfc   = document.getElementById('rfc-input').value.trim().toUpperCase();
   const errEl = document.getElementById('error-msg');
-  const btn = document.getElementById('btn-consultar');
+  const btn   = document.getElementById('btn-consultar');
 
   errEl.style.display = 'none';
 
@@ -732,32 +968,22 @@ async function consultar(){
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Consultando...';
 
-  let data = null;
-  let error = null;
+  let data = null, error = null;
 
   if(isSupabaseConfigured()){
-    const res = await supabaseClient
-      .from('deudores')
-      .select('*')
-      .eq('rfc', rfc)
-      .maybeSingle();
-    data = res.data;
+    const res = await supabaseClient.from('deudores').select('*').eq('rfc', rfc).maybeSingle();
+    data  = res.data;
     error = res.error;
   } else {
-    // Modo demo
     await new Promise(r => setTimeout(r, 900));
-    if(rfc === DEMO_RFC){
-      data = DEMO_DATA;
-    } else {
-      error = { message: 'not found' };
-    }
+    if(rfc === DEMO_RFC) data = DEMO_DATA;
+    else error = { message: 'not found' };
   }
 
   btn.disabled = false;
   btn.innerHTML = 'Consultar';
 
   if(error || !data){
-    // Mostrar error detallado para diagnóstico
     const code = error?.code || '';
     const msg  = error?.message || 'sin respuesta';
     if(code === 'PGRST116'){
@@ -766,12 +992,10 @@ async function consultar(){
       errEl.textContent = `Error de conexión [${code}]: ${msg}. Intenta de nuevo o contacta soporte.`;
     }
     errEl.style.display = 'block';
-    console.error('Supabase error:', error);
     return;
   }
 
   currentData = data;
-  // Paso intermedio: verificar últimos 4 dígitos
   document.getElementById('step-login').style.display  = 'none';
   document.getElementById('step-verify').style.display = 'block';
   document.getElementById('digits-input').value = '';
@@ -779,6 +1003,7 @@ async function consultar(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// ===== VERIFICAR DÍGITOS =====
 function verificar(){
   const digitos = document.getElementById('digits-input').value.trim();
   const errEl   = document.getElementById('error-verify');
@@ -827,57 +1052,11 @@ function regresarLogin(){
   currentData = null;
 }
 
-// ===== FECHA LÍMITE DE OFERTA =====
-function fechaLimiteOferta(){
-  const hoy = new Date();
-  const fin  = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0); // último día del mes actual
-  return fin.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-}
-
-// ===== MESES DINÁMICOS =====
-function mesesActuales(){
-  const nombres = ['enero','febrero','marzo','abril','mayo','junio',
-                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const hoy = new Date();
-  return { m1: nombres[hoy.getMonth()], m2: nombres[(hoy.getMonth()+1)%12] };
-}
-
-// ===== CÁLCULO AUTOMÁTICO DE OPCIONES =====
-function calcularOpciones(saldo){
-  let meses;
-  if(saldo <= 3000)       meses = 3;
-  else if(saldo <= 6000)  meses = 6;
-  else if(saldo <= 20000) meses = 8;
-  else                    meses = 12;
-
-  const montoUnico    = saldo * 0.30;
-  const saldoDesc60   = saldo * 0.40;
-  const montoCadaPago = saldoDesc60 / 2;
-  const montoPorMes   = saldo / meses;
-  const { m1, m2 }   = mesesActuales();
-
-  return {
-    opcion1_titulo: 'Pago único — 70% de descuento',
-    opcion1_monto:  montoUnico,                    // TOTAL (1 pago)
-    opcion1_desc:   `1 pago de ${fmt(montoUnico)}. Ahorras ${fmt(saldo - montoUnico)} sobre tu saldo original de ${fmt(saldo)}.`,
-
-    opcion2_titulo: 'Dos pagos — 60% de descuento',
-    opcion2_monto:  saldoDesc60,                   // TOTAL (2 pagos sumados)
-    opcion2_desc:   `2 pagos de ${fmt(montoCadaPago)} c/u — ${m1} y ${m2}. Ahorras ${fmt(saldo - saldoDesc60)} sobre tu saldo original de ${fmt(saldo)}.`,
-
-    opcion3_titulo: `Plan ${meses} meses sin descuento`,
-    opcion3_monto:  saldo,                         // TOTAL (saldo completo)
-    opcion3_desc:   `${meses} pagos de ${fmt(montoPorMes)} c/u. Sin descuento; pagas el saldo total en partes iguales.`
-  };
-}
-
+// ===== MOSTRAR CUENTA =====
 function mostrarCuenta(d, isDemo){
   const saldo = Number(d.saldo_total) || 0;
   const opts  = calcularOpciones(saldo);
-
-  // Mezclar opciones calculadas con datos del deudor
-  const data  = Object.assign({}, d, opts);
-  currentData = data;
+  currentData = Object.assign({}, d, opts);
 
   document.getElementById('d-nombre').textContent  = d.nombre || '—';
   document.getElementById('d-cuenta').textContent  = d.terminacion_cuenta || '—';
@@ -903,11 +1082,6 @@ function mostrarCuenta(d, isDemo){
   document.getElementById('o3-monto').textContent  = fmt(opts.opcion3_monto);
   document.getElementById('o3-desc').textContent   = opts.opcion3_desc;
 
-  ['opt1','opt2','opt3'].forEach(id=>{
-    document.getElementById(id).style.display = 'block';
-  });
-
-  // Fecha límite de oferta
   const expEl = document.getElementById('expiry-badge');
   expEl.textContent = `⏳ Oferta válida hasta el ${fechaLimiteOferta()}`;
   expEl.classList.add('visible');
@@ -916,59 +1090,207 @@ function mostrarCuenta(d, isDemo){
   document.getElementById('step-login').style.display  = 'none';
   document.getElementById('step-cuenta').style.display = 'block';
   document.getElementById('wa-btn-wrap').classList.remove('visible');
+  document.getElementById('pay-link-wrap').classList.remove('visible');
+  document.getElementById('firma-ok-container').innerHTML = '';
+  ['opt1','opt2','opt3'].forEach(id => document.getElementById(id).classList.remove('selected'));
   opcionSeleccionada = null;
   window.scrollTo({top:0,behavior:'smooth'});
+
+  // Registrar que el cliente consultó su cuenta
+  if(isSupabaseConfigured() && d.rfc && !isDemo){
+    supabaseClient.from('deudores')
+      .update({ status: 'consultado' })
+      .eq('rfc', d.rfc)
+      .is('status', null)   // solo si aún no tiene status
+      .then(()=>{});
+  }
 }
 
-// ===== REGISTRAR SOLICITUD EN SUPABASE =====
-async function registrarSolicitud(opcionNum){
-  if(!isSupabaseConfigured() || !currentData?.rfc) return;
-  try {
-    await supabaseClient
-      .from('deudores')
-      .update({
-        status: 'convenio_solicitado',
-        opcion_elegida: opcionNum,
-        fecha_solicitud: new Date().toISOString()
-      })
-      .eq('rfc', currentData.rfc);
-  } catch(e){ console.warn('No se pudo registrar solicitud:', e); }
-}
-
-// ===== IMPRIMIR RESUMEN =====
-function imprimirResumen(){
-  window.print();
-}
-
+// ===== SELECCIONAR OPCIÓN → ABRE FIRMA =====
 function seleccionarOpcion(n){
   ['opt1','opt2','opt3'].forEach(id => document.getElementById(id).classList.remove('selected'));
   document.getElementById('opt'+n).classList.add('selected');
   opcionSeleccionada = n;
+  mostrarFirma(n);
+}
 
-  const d = currentData;
-  const titulo  = d['opcion'+n+'_titulo']  || 'convenio';
-  const montoN  = d['opcion'+n+'_monto'];
-  const monto   = montoN ? fmt(montoN) : '';
+// ============================================================
+//  FIRMA DIGITAL
+// ============================================================
+function initCanvas(){
+  firmaCanvas = document.getElementById('firma-canvas');
+  firmaCtx    = firmaCanvas.getContext('2d');
+  firmaCtx.strokeStyle = '#C9991A';
+  firmaCtx.lineWidth   = 2.5;
+  firmaCtx.lineCap     = 'round';
+  firmaCtx.lineJoin    = 'round';
+
+  const getPos = (e, canvas) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY };
+  };
+
+  firmaCanvas.addEventListener('mousedown', e=>{
+    isDrawing = true;
+    const p = getPos(e, firmaCanvas);
+    firmaCtx.beginPath();
+    firmaCtx.moveTo(p.x, p.y);
+  });
+  firmaCanvas.addEventListener('mousemove', e=>{
+    if(!isDrawing) return;
+    const p = getPos(e, firmaCanvas);
+    firmaCtx.lineTo(p.x, p.y);
+    firmaCtx.stroke();
+    hasFirmaDibujada = true;
+    document.getElementById('canvas-hint').style.opacity = '0';
+  });
+  firmaCanvas.addEventListener('mouseup',    ()=>{ isDrawing=false; });
+  firmaCanvas.addEventListener('mouseleave', ()=>{ isDrawing=false; });
+
+  firmaCanvas.addEventListener('touchstart', e=>{ e.preventDefault(); isDrawing=true; const p=getPos(e,firmaCanvas); firmaCtx.beginPath(); firmaCtx.moveTo(p.x,p.y); }, {passive:false});
+  firmaCanvas.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!isDrawing) return; const p=getPos(e,firmaCanvas); firmaCtx.lineTo(p.x,p.y); firmaCtx.stroke(); hasFirmaDibujada=true; document.getElementById('canvas-hint').style.opacity='0'; }, {passive:false});
+  firmaCanvas.addEventListener('touchend',   ()=>{ isDrawing=false; }, {passive:false});
+}
+
+function mostrarFirma(n){
+  opcionParaFirmar = n;
+  const d      = currentData;
+  const titulo = d['opcion'+n+'_titulo'] || 'Convenio';
+  const monto  = fmt(d['opcion'+n+'_monto']);
+  const fecha  = fechaLimiteOferta();
+  const ahora  = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+
+  document.getElementById('firma-convenio-text').innerHTML = `
+    <p>Ciudad de México, <strong>${ahora}</strong></p>
+    <p style="margin-top:10px">
+      Por medio del presente convenio, <strong>${d.nombre}</strong>, con RFC <strong>${d.rfc}</strong>,
+      titular de la cuenta Sears con terminación <strong>${d.terminacion_cuenta}</strong>,
+      manifiesta su conformidad con la siguiente propuesta de liquidación:
+    </p>
+    <div class="firma-opcion-resumen">
+      <div class="fo-label">Opción elegida</div>
+      <div class="fo-val">${titulo}</div>
+      <div class="fo-label">Total a pagar</div>
+      <div class="fo-val fo-big">${monto}</div>
+      <div class="fo-label">Saldo original</div>
+      <div class="fo-val">${fmt(d.saldo_total)}</div>
+      <div class="fo-label">Fecha límite</div>
+      <div class="fo-val">${fecha}</div>
+    </div>
+    <p style="margin-top:10px;font-size:.76rem">
+      El titular acepta que <strong>Cobranza Especializada Bravo y Asociados S.A.S. de C.V.</strong>
+      (RFC CEB2501307R0) gestionará este convenio ante el acreedor original.
+      Un asesor confirmará los términos vía WhatsApp para formalizar el pago.
+    </p>
+  `;
+
+  // Reset
+  if(!firmaCanvas) initCanvas();
+  limpiarFirma();
+  document.getElementById('firma-nombre-escrito').value = '';
+  document.getElementById('firma-error').style.display = 'none';
+  document.getElementById('canvas-hint').style.opacity = '1';
+
+  const overlay = document.getElementById('firma-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  overlay.scrollTop = 0;
+}
+
+function limpiarFirma(){
+  hasFirmaDibujada = false;
+  if(!firmaCanvas) firmaCanvas = document.getElementById('firma-canvas');
+  if(!firmaCtx)    firmaCtx    = firmaCanvas.getContext('2d');
+  firmaCtx.clearRect(0, 0, firmaCanvas.width, firmaCanvas.height);
+  document.getElementById('canvas-hint').style.opacity = '1';
+}
+
+async function firmar(){
+  const nombreEscrito = document.getElementById('firma-nombre-escrito').value.trim();
+  const errEl  = document.getElementById('firma-error');
+  const btn    = document.getElementById('btn-firmar');
+  errEl.style.display = 'none';
+
+  if(!hasFirmaDibujada && !nombreEscrito){
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Guardando firma...';
+
+  // Guardar en Supabase
+  if(isSupabaseConfigured() && currentData?.rfc){
+    try {
+      const payload = {
+        status:          'firmado',
+        opcion_elegida:  opcionParaFirmar,
+        fecha_solicitud: new Date().toISOString(),
+        firma_aceptada:  true,
+        fecha_firma:     new Date().toISOString()
+      };
+      await supabaseClient.from('deudores').update(payload).eq('rfc', currentData.rfc);
+    } catch(e){ console.warn('No se pudo guardar firma:', e); }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✓ Aceptar y Firmar Convenio';
+
+  // Cerrar overlay firma
+  document.getElementById('firma-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+
+  // Mostrar badge de firma confirmada
+  const ts = new Date().toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const container = document.getElementById('firma-ok-container');
+  container.innerHTML = `<div class="firma-ok-badge" style="margin-top:16px">
+    ✓ Convenio firmado digitalmente el ${ts}
+  </div>`;
+
+  // Preparar mensaje WA (menciona la firma)
+  const n     = opcionParaFirmar;
+  const d     = currentData;
+  const titulo = d['opcion'+n+'_titulo'] || 'convenio';
+  const montoN = d['opcion'+n+'_monto'];
+  const monto  = montoN ? fmt(montoN) : '';
 
   const msg = encodeURIComponent(
     `Hola, soy *${d.nombre}* (RFC: ${d.rfc}).\n` +
     `Consulté mi cuenta Sears terminación *${d.terminacion_cuenta}*.\n` +
-    `Mi saldo es de *${fmt(d.saldo_total)}* y estoy interesado/a en:\n\n` +
+    `Mi saldo es de *${fmt(d.saldo_total)}* y acabo de firmar digitalmente mi convenio:\n\n` +
     `*Opción ${n}: ${titulo}*${monto ? ' — '+monto : ''}.\n\n` +
-    `Por favor, solicito formalizar mi convenio de pago.`
+    `Por favor, procedan a confirmar mi convenio de pago. ¡Gracias!`
   );
 
-  document.getElementById('wa-link').href =
-    `https://wa.me/${WA_NUMBER}?text=${msg}`;
+  document.getElementById('wa-link').href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
 
   const wrap = document.getElementById('wa-btn-wrap');
   wrap.classList.add('visible');
-  wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 
-  // Registrar en Supabase que el cliente seleccionó convenio
-  registrarSolicitud(n);
+  // Mostrar link de pago directo si está configurado
+  if(SEARS_PAYMENT_URL){
+    document.getElementById('pay-link').href = SEARS_PAYMENT_URL;
+    document.getElementById('pay-link-wrap').classList.add('visible');
+  }
+
+  wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+function cancelarFirma(){
+  document.getElementById('firma-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+  // Des-seleccionar opción
+  ['opt1','opt2','opt3'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  opcionSeleccionada = null;
+}
+
+// ===== IMPRIMIR =====
+function imprimirResumen(){ window.print(); }
+
+// ===== REGRESAR =====
 function regresar(){
   document.getElementById('step-cuenta').style.display = 'none';
   document.getElementById('step-login').style.display  = 'block';
@@ -978,14 +1300,12 @@ function regresar(){
   opcionSeleccionada = null;
 }
 
-// Enter key en RFC
+// ===== TECLADO =====
 document.getElementById('rfc-input').addEventListener('keydown', e=>{
   if(e.key === 'Enter') consultar();
   const allowed = /^[A-Za-z0-9]$/;
   if(e.key.length === 1 && !allowed.test(e.key)) e.preventDefault();
 });
-
-// Enter key en dígitos
 document.getElementById('digits-input').addEventListener('keydown', e=>{
   if(e.key === 'Enter') verificar();
   const allowed = /^[0-9]$/;
@@ -995,13 +1315,12 @@ document.getElementById('digits-input').addEventListener('keydown', e=>{
 
 <!--
 ============================================================
-  INSTRUCCIONES SUPABASE
-============================================================
-1. Crea proyecto en https://supabase.com
-2. SQL Editor → ejecuta el CREATE TABLE de deudores
-3. Settings → API → copia URL y anon key
-4. Reemplaza SUPABASE_URL y SUPABASE_ANON_KEY arriba
-5. Sube a GitHub como sears.html → Vercel lo sirve en /sears
+  SUPABASE — COLUMNAS NECESARIAS PARA FIRMA DIGITAL
+  Ejecuta en SQL Editor si aún no existen:
+
+  ALTER TABLE deudores ADD COLUMN IF NOT EXISTS firma_aceptada BOOLEAN DEFAULT FALSE;
+  ALTER TABLE deudores ADD COLUMN IF NOT EXISTS fecha_firma TIMESTAMPTZ;
+  GRANT UPDATE ON TABLE public.deudores TO anon;
 ============================================================
 -->
 </body>
